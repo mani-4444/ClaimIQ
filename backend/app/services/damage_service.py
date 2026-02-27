@@ -12,11 +12,23 @@ class DamageService:
 
     async def detect_damage(self, image_urls: List[str]) -> List[DamageZone]:
         """Run YOLO detection on all uploaded images and return zone-level results."""
+        damages, _ = await self.detect_damage_with_overlays(image_urls)
+        return damages
+
+    async def detect_damage_with_overlays(
+        self, image_urls: List[str]
+    ) -> tuple[List[DamageZone], dict[str, bytes]]:
+        """Run YOLO detection and return zone results + annotated image bytes per source URL."""
         all_damages: List[DamageZone] = []
+        overlay_images: dict[str, bytes] = {}
 
         for url in image_urls:
             try:
-                detections = await self.detector.detect(url)
+                detections, annotated_bytes = await self.detector.detect_with_annotated_image(url)
+
+                if annotated_bytes:
+                    overlay_images[url] = annotated_bytes
+
                 for det in detections:
                     severity = self._classify_severity(
                         det["confidence"], det.get("area_ratio", 0)
@@ -34,7 +46,7 @@ class DamageService:
         # Deduplicate: keep highest confidence detection per zone
         unique = self._deduplicate(all_damages)
         logger.info(f"Detected {len(unique)} damaged zones from {len(image_urls)} images")
-        return unique
+        return unique, overlay_images
 
     def _classify_severity(self, confidence: float, area_ratio: float) -> str:
         """Classify severity based on detection confidence and damage area."""

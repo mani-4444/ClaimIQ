@@ -48,3 +48,25 @@ class StorageService:
             logger.info(f"Image deleted: {file_path}")
         except Exception as e:
             logger.warning(f"Failed to delete image {file_path}: {e}")
+
+    async def upload_processed_image(
+        self,
+        image_bytes: bytes,
+        user_id: str,
+        claim_id: str,
+        index: int,
+    ) -> str:
+        """Upload a YOLO-annotated image and return its public URL."""
+        file_path = (
+            f"{user_id}/{claim_id}/processed_{index + 1}_{uuid.uuid4().hex[:8]}.jpg"
+        )
+
+        self.client.storage.from_(self.BUCKET).upload(
+            path=file_path,
+            file=image_bytes,
+            file_options={"content-type": "image/jpeg"},
+        )
+
+        public_url = self.client.storage.from_(self.BUCKET).get_public_url(file_path)
+        logger.info(f"Processed image uploaded: {file_path}")
+        return public_url
