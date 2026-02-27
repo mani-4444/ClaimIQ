@@ -159,16 +159,18 @@ async def process_claim(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="YOLO model is not loaded. Check YOLO_MODEL_PATH / YOLO_WEIGHTS_DIR configuration.",
         )
-    if "clip" not in ml_models:
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="CLIP model is not loaded. Verify CLIP dependencies in backend environment.",
-        )
+
+    # CLIP is optional — fraud image-similarity is skipped if unavailable
+    clip_embedder = ml_models.get("clip")
+    if clip_embedder is None:
+        from app.ml.clip_embedder import CLIPEmbedder
+        clip_embedder = CLIPEmbedder()  # creates instance with _available=False
+        logger.warning("CLIP not loaded — fraud image similarity will be skipped.")
 
     damage_service = DamageService(detector=ml_models["yolo"])
     cost_service = CostService(cost_repo=CostRepository())
     fraud_service = FraudService(
-        clip_embedder=ml_models["clip"],
+        clip_embedder=clip_embedder,
         claim_repo=claim_repo,
         fraud_repo=FraudRepository(),
     )
