@@ -1,92 +1,82 @@
-export type UserRole = 'policyholder' | 'adjuster' | 'admin';
+export type UserRole = "policyholder" | "adjuster" | "admin";
 
 export interface User {
   id: string;
   email: string;
-  firstName: string;
-  lastName: string;
+  name: string;
   role: UserRole;
   avatar?: string;
+  policyType?: string;
   createdAt: string;
-  isActive: boolean;
 }
 
-export type ClaimStatus =
-  | 'DRAFT'
-  | 'SUBMITTED'
-  | 'UNDER_REVIEW'
-  | 'INFO_NEEDED'
-  | 'APPROVED'
-  | 'DENIED'
-  | 'FLAGGED'
-  | 'CLOSED';
+/** Backend claim statuses */
+export type ClaimStatus = "uploaded" | "processing" | "processed" | "error";
 
-export type ClaimType = 'auto' | 'home' | 'health' | 'life' | 'property' | 'liability';
+/** Backend AI decision */
+export type ClaimDecision =
+  | "pending"
+  | "pre_approved"
+  | "manual_review"
+  | "rejected";
+
+/** Risk levels from backend */
+export type RiskLevel = "low" | "medium" | "high";
+
+/** Vehicle damage zones */
+export type VehicleZone = "Front" | "Rear" | "Left Side" | "Right Side";
+
+export interface DamageZone {
+  zone: VehicleZone;
+  severity: "minor" | "moderate" | "severe";
+  confidence: number;
+  bounding_box: number[];
+}
+
+export interface CostBreakdown {
+  zone: string;
+  severity: string;
+  base_cost: number;
+  labor_cost: number;
+  regional_multiplier: number;
+  total: number;
+}
 
 export interface Claim {
   id: string;
-  claimNumber: string;
-  type: ClaimType;
+  user_id: string;
+  image_urls: string[];
+  user_description?: string;
+  policy_number: string;
   status: ClaimStatus;
-  title: string;
-  description: string;
-  amount: number;
-  policyNumber: string;
-  policyholderName: string;
-  submittedAt: string;
-  updatedAt: string;
-  assignedTo?: string;
-  riskScore?: number;
-  documents: ClaimDocument[];
-  notes: ClaimNote[];
-  timeline: TimelineEvent[];
-}
-
-export interface ClaimDocument {
-  id: string;
-  name: string;
-  type: string;
-  size: number;
-  url: string;
-  uploadedAt: string;
-}
-
-export interface ClaimNote {
-  id: string;
-  author: string;
-  authorRole: UserRole;
-  content: string;
-  createdAt: string;
-}
-
-export interface TimelineEvent {
-  id: string;
-  status: ClaimStatus;
-  description: string;
-  timestamp: string;
-  author?: string;
+  damage_zones?: DamageZone[];
+  ai_explanation?: string;
+  cost_breakdown?: CostBreakdown[];
+  cost_total?: number;
+  fraud_score?: number;
+  fraud_flags?: string[];
+  decision?: ClaimDecision;
+  decision_confidence?: number;
+  risk_level?: RiskLevel;
+  created_at: string;
+  processed_at?: string;
 }
 
 export interface DashboardStats {
   totalClaims: number;
   pendingClaims: number;
-  approvedClaims: number;
-  deniedClaims: number;
-  flaggedClaims: number;
-  averageProcessingTime: number;
-  totalAmount: number;
-  trend: {
-    totalClaims: number;
-    approvedClaims: number;
-    deniedClaims: number;
-  };
+  processedClaims: number;
+  preApproved: number;
+  manualReview: number;
+  rejected: number;
+  totalCost: number;
 }
 
 export interface Notification {
   id: string;
   title: string;
   message: string;
-  type: 'info' | 'success' | 'warning' | 'error';
+  type: "info" | "success" | "warning" | "error";
   read: boolean;
   createdAt: string;
   link?: string;
