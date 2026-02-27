@@ -56,7 +56,7 @@ export function ClaimDetailPage() {
     );
   }
 
-  if (error || !claim) {
+  if (!claim && !loading) {
     return (
       <div className="animate-fade-in">
         <EmptyState
@@ -115,6 +115,14 @@ export function ClaimDetailPage() {
           { label: claim.id.slice(0, 8) },
         ]}
       />
+
+      {/* Processing error banner */}
+      {error && (
+        <div className="rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400 flex items-center gap-2">
+          <AlertTriangle className="h-4 w-4 shrink-0" />
+          <span>{error}</span>
+        </div>
+      )}
 
       {/* Header */}
       <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
