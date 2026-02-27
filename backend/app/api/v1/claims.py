@@ -154,6 +154,17 @@ async def process_claim(
     # Build service dependencies from app state (ML models loaded at startup)
     from app.main import ml_models
 
+    if "yolo" not in ml_models:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="YOLO model is not loaded. Check YOLO_MODEL_PATH / YOLO_WEIGHTS_DIR configuration.",
+        )
+    if "clip" not in ml_models:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="CLIP model is not loaded. Verify CLIP dependencies in backend environment.",
+        )
+
     damage_service = DamageService(detector=ml_models["yolo"])
     cost_service = CostService(cost_repo=CostRepository())
     fraud_service = FraudService(

@@ -5,6 +5,7 @@ from app.services.cost_service import CostService
 from app.services.fraud_service import FraudService
 from app.services.decision_service import DecisionService
 from app.services.vision_llm_service import VisionLLMService
+from app.services.storage_service import StorageService
 from app.db.repositories.claim_repo import ClaimRepository
 from app.schemas.claim import ClaimProcessResponse
 from app.utils.logger import logger
@@ -57,7 +58,36 @@ class ClaimService:
 
             # 2. Damage Detection
             logger.info(f"[{claim_id[:8]}] Running damage detection...")
-            damage_zones = await self.damage_service.detect_damage(image_urls)
+            damage_zones, overlay_images = await self.damage_service.detect_damage_with_overlays(image_urls)
+
+            processed_image_urls = image_urls.copy()
+            if overlay_images:
+                storage_service = StorageService()
+                processed_image_urls = []
+
+                for idx, original_url in enumerate(image_urls):
+                    overlay = overlay_images.get(original_url)
+                    if not overlay:
+                        processed_image_urls.append(original_url)
+                        continue
+
+                    try:
+                        overlay_url = await storage_service.upload_processed_image(
+                            image_bytes=overlay,
+                            user_id=user_id,
+                            claim_id=claim_id,
+                            index=idx,
+                        )
+                        processed_image_urls.append(overlay_url)
+                    except Exception as e:
+                        logger.error(
+                            f"[{claim_id[:8]}] Failed to upload processed image {idx + 1}: {e}"
+                        )
+                        processed_image_urls.append(original_url)
+            else:
+                logger.warning(
+                    f"[{claim_id[:8]}] No YOLO overlay images generated; keeping original image URLs"
+                )
 
             # 3. Vision LLM Explanation
             logger.info(f"[{claim_id[:8]}] Generating AI explanation...")
@@ -96,6 +126,7 @@ class ClaimService:
 
             await self.claim_repo.update_processed(
                 claim_id=claim_id,
+                image_urls=processed_image_urls,
                 damage_json=damage_zones,
                 ai_explanation=ai_explanation,
                 cost_breakdown=cost_breakdown,
@@ -119,7 +150,7 @@ class ClaimService:
             return ClaimProcessResponse(
                 id=claim_id,
                 user_id=user_id,
-                image_urls=image_urls,
+                image_urls=processed_image_urls,
                 user_description=claim.get("user_description"),
                 policy_number=claim["policy_number"],
                 status="processed",

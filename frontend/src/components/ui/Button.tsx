@@ -35,6 +35,7 @@ const sizeClasses: Record<ButtonSize, string> = {
 export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
   (
     {
+      type = 'button',
       className,
       variant = 'primary',
       size = 'md',
@@ -62,6 +63,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
           className,
         )}
         disabled={isDisabled}
+        type={type}
         {...props}
       >
         {loading && <Loader2 className="h-4 w-4 animate-spin" />}

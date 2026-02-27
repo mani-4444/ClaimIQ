@@ -2,8 +2,8 @@ import io
 import httpx
 from PIL import Image
 from ultralytics import YOLO
-from typing import List, Dict
-from app.config import settings
+from typing import List, Dict, Tuple, Optional
+from app.config import resolve_yolo_model_path
 from app.utils.logger import logger
 from app.utils.constants import MAX_IMAGE_DIMENSION
 
@@ -46,11 +46,21 @@ class YOLODetector:
     }
 
     def __init__(self):
-        self.model = YOLO(settings.YOLO_MODEL_PATH)
-        logger.info(f"YOLO model loaded from {settings.YOLO_MODEL_PATH}")
+        model_path = resolve_yolo_model_path()
+        self.model_path = model_path
+        self.model = YOLO(model_path)
+        logger.info(f"YOLO model loaded from {model_path}")
 
     async def detect(self, image_url: str) -> List[Dict]:
         """Download image and run YOLO detection, returning zone-level results."""
+        detections, _ = await self.detect_with_annotated_image(image_url)
+        return detections
+
+    async def detect_with_annotated_image(
+        self, image_url: str
+    ) -> Tuple[List[Dict], Optional[bytes]]:
+        """Run detection and return both detections and a YOLO-annotated JPEG image."""
+        logger.info(f"Running YOLO inference with model: {self.model_path}")
         # Download image
         async with httpx.AsyncClient(timeout=15) as client:
             resp = await client.get(image_url)
@@ -94,7 +104,20 @@ class YOLODetector:
                     "area_ratio": area_ratio,
                 })
 
-        return detections
+        annotated_bytes: Optional[bytes] = None
+        try:
+            if results:
+                plotted = results[0].plot()  # BGR ndarray
+                if plotted is not None:
+                    plotted_image = Image.fromarray(plotted[:, :, ::-1])
+                    buf = io.BytesIO()
+                    plotted_image.save(buf, format="JPEG", quality=90)
+                    annotated_bytes = buf.getvalue()
+        except Exception as e:
+            logger.warning(f"Failed to render YOLO annotated image for {image_url}: {e}")
+
+        logger.info(f"YOLO inference complete: {len(detections)} detections")
+        return detections, annotated_bytes
 
     def _infer_zone_from_bbox(
         self, x1: float, y1: float, x2: float, y2: float, img_w: int, img_h: int

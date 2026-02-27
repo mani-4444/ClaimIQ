@@ -56,6 +56,7 @@ class ClaimRepository:
     async def update_processed(
         self,
         claim_id: str,
+        image_urls: List[str],
         damage_json: list,
         ai_explanation: str,
         cost_breakdown: list,
@@ -75,6 +76,7 @@ class ClaimRepository:
         ]
 
         update_data = {
+            "image_urls": image_urls,
             "damage_json": json.dumps(damage_data),
             "ai_explanation": ai_explanation,
             "cost_breakdown": json.dumps(cost_data),
