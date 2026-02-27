@@ -94,18 +94,22 @@ ON CONFLICT (zone_name) DO NOTHING;
 -- ============================================
 ALTER TABLE claims ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Users can view own claims" ON claims;
 CREATE POLICY "Users can view own claims"
     ON claims FOR SELECT
     USING (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Users can insert own claims" ON claims;
 CREATE POLICY "Users can insert own claims"
     ON claims FOR INSERT
     WITH CHECK (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Users can update own claims" ON claims;
 CREATE POLICY "Users can update own claims"
     ON claims FOR UPDATE
     USING (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Users can delete own claims" ON claims;
 CREATE POLICY "Users can delete own claims"
     ON claims FOR DELETE
     USING (auth.uid() = user_id);

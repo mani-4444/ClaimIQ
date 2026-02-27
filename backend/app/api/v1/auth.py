@@ -7,124 +7,135 @@ from app.schemas.auth import (
     TokenResponse,
     UserProfile,
 )
-from app.db.supabase_client import get_supabase_client
 from app.db.repositories.user_repo import UserRepository
 from app.dependencies import get_current_user
 from app.utils.logger import logger
+from app.config import settings
+import httpx
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
+
+_GOTRUE_URL = f"{settings.SUPABASE_URL}/auth/v1"
 
 
 @router.post("/register", response_model=AuthResponse, status_code=status.HTTP_201_CREATED)
 async def register(req: UserRegisterRequest):
-    """Register a new user via Supabase Auth."""
+    """Register a new user via Supabase Auth (direct HTTP)."""
     try:
-        client = get_supabase_client()
+        headers = {
+            "apikey": settings.SUPABASE_ANON_KEY,
+            "Content-Type": "application/json",
+        }
+        payload = {
+            "email": req.email,
+            "password": req.password,
+            "data": {"name": req.name, "role": "user"},
+        }
+        logger.info(f"Calling GoTrue signup for {req.email}")
+        async with httpx.AsyncClient() as http:
+            resp = await http.post(f"{_GOTRUE_URL}/signup", headers=headers, json=payload, timeout=30)
 
-        # Create auth user in Supabase
-        auth_response = client.auth.sign_up(
-            {
-                "email": req.email,
-                "password": req.password,
-                "options": {
-                    "data": {
-                        "name": req.name,
-                        "role": "user",
-                    }
-                },
-            }
-        )
+        if resp.status_code >= 400:
+            body = resp.json()
+            logger.error(f"GoTrue signup error {resp.status_code}: {body}")
+            raise HTTPException(status_code=resp.status_code, detail=body.get("msg") or body.get("message") or str(body))
 
-        if not auth_response.user:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Registration failed",
-            )
+        data = resp.json()
+        user_obj = data.get("user", {})
+        user_id = user_obj.get("id")
+        access_token = data.get("access_token", "")
+        refresh_token = data.get("refresh_token", "")
+
+        if not user_id:
+            raise HTTPException(status_code=400, detail="Registration failed: no user ID in response")
 
         # Create user record in our users table
         user_repo = UserRepository()
         await user_repo.create(
-            user_id=auth_response.user.id,
+            user_id=user_id,
             name=req.name,
             email=req.email,
             policy_type=req.policy_type,
         )
 
-        logger.info(f"User registered: {req.email}")
+        logger.info(f"User registered: {req.email} (id={user_id})")
 
         return AuthResponse(
-            id=auth_response.user.id,
+            id=user_id,
             name=req.name,
             email=req.email,
-            access_token=auth_response.session.access_token,
-            refresh_token=auth_response.session.refresh_token,
+            access_token=access_token,
+            refresh_token=refresh_token,
         )
     except HTTPException:
         raise
     except Exception as e:
         logger.error(f"Registration failed: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Registration failed: {str(e)}",
-        )
+        raise HTTPException(status_code=400, detail=f"Registration failed: {str(e)}")
 
 
 @router.post("/login", response_model=AuthResponse)
 async def login(req: UserLoginRequest):
-    """Login user via Supabase Auth."""
+    """Login user via Supabase Auth (direct HTTP)."""
     try:
-        client = get_supabase_client()
-
-        auth_response = client.auth.sign_in_with_password(
-            {"email": req.email, "password": req.password}
-        )
-
-        if not auth_response.user or not auth_response.session:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid credentials",
+        headers = {
+            "apikey": settings.SUPABASE_ANON_KEY,
+            "Content-Type": "application/json",
+        }
+        async with httpx.AsyncClient() as http:
+            resp = await http.post(
+                f"{_GOTRUE_URL}/token?grant_type=password",
+                headers=headers,
+                json={"email": req.email, "password": req.password},
+                timeout=30,
             )
 
-        user_name = (auth_response.user.user_metadata or {}).get("name", "")
+        if resp.status_code >= 400:
+            raise HTTPException(status_code=401, detail="Invalid credentials")
+
+        data = resp.json()
+        user_data = data.get("user", {})
+        user_name = (user_data.get("user_metadata") or {}).get("name", "")
 
         return AuthResponse(
-            id=auth_response.user.id,
+            id=user_data.get("id", ""),
             name=user_name,
-            email=auth_response.user.email,
-            access_token=auth_response.session.access_token,
-            refresh_token=auth_response.session.refresh_token,
+            email=user_data.get("email", req.email),
+            access_token=data.get("access_token", ""),
+            refresh_token=data.get("refresh_token", ""),
         )
     except HTTPException:
         raise
     except Exception as e:
         logger.error(f"Login failed: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid credentials",
-        )
+        raise HTTPException(status_code=401, detail="Invalid credentials")
 
 
 @router.post("/refresh", response_model=TokenResponse)
 async def refresh_token(req: TokenRefreshRequest):
     """Refresh access token."""
     try:
-        client = get_supabase_client()
-        response = client.auth.refresh_session(req.refresh_token)
-
-        if not response.session:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid refresh token",
+        headers = {
+            "apikey": settings.SUPABASE_ANON_KEY,
+            "Content-Type": "application/json",
+        }
+        async with httpx.AsyncClient() as http:
+            resp = await http.post(
+                f"{_GOTRUE_URL}/token?grant_type=refresh_token",
+                headers=headers,
+                json={"refresh_token": req.refresh_token},
+                timeout=30,
             )
 
-        return TokenResponse(access_token=response.session.access_token)
+        if resp.status_code >= 400:
+            raise HTTPException(status_code=401, detail="Invalid refresh token")
+
+        data = resp.json()
+        return TokenResponse(access_token=data.get("access_token", ""))
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Token refresh failed",
-        )
+        raise HTTPException(status_code=401, detail="Token refresh failed")
 
 
 @router.get("/me", response_model=UserProfile)
