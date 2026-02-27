@@ -1,0 +1,319 @@
+📄 PRODUCT REQUIREMENTS DOCUMENT (PRD)
+🏎 Product Name
+
+ClaimIQ – AI-Powered Instant Motor Claim Pre-Approval System
+
+1️⃣ Product Overview
+🎯 Vision
+
+ClaimIQ is an AI-powered insurance claim intelligence platform that analyzes vehicle damage images and provides instant repair cost estimation, fraud risk scoring, and automated pre-approval decisions.
+
+It reduces claim processing time from days to minutes.
+
+🚨 Problem Statement
+
+Insurance motor claims are:
+
+Slow (manual inspection required)
+
+Prone to fraud
+
+Inconsistent in cost estimation
+
+Operationally expensive
+
+We solve this by:
+
+Automated damage detection
+
+AI-based cost estimation
+
+Fraud similarity detection
+
+Decision automation
+
+2️⃣ Objectives (Hackathon Scope)
+Primary Goals
+
+Upload vehicle damage images
+
+Detect damaged parts + severity
+
+Estimate repair cost
+
+Detect potential fraud
+
+Provide automated approval decision
+
+Generate claim summary report
+
+3️⃣ Target Users
+
+Insurance companies
+
+Claims processing teams
+
+Motor insurance policy holders
+
+InsurTech startups
+
+4️⃣ System Architecture Overview
+High-Level Flow
+User Uploads Image
+        ↓
+Damage Detection Model (YOLO)
+        ↓
+Vision LLM Reasoning Agent
+        ↓
+Cost Estimation Engine
+        ↓
+Fraud Detection Module
+        ↓
+Decision Engine
+        ↓
+Supabase Storage + Dashboard Display
+5️⃣ Core Features
+🔹 Feature 1: Image Upload & Storage
+Description
+
+Users upload one or multiple car damage images.
+
+Requirements
+
+Accept JPG/PNG
+
+Store in Supabase Storage
+
+Create new claim entry in DB
+
+🔹 Feature 2: Damage Detection Model
+Description
+
+Detect damaged car parts and severity.
+
+Technical Implementation
+
+YOLOv8 pretrained model (fine-tuned if possible)
+
+Output:
+
+Part name (bumper, hood, headlight)
+
+Bounding box
+
+Severity classification (minor/moderate/severe)
+
+Output Example
+{
+  "part": "Rear Bumper",
+  "severity": "Moderate",
+  "confidence": 0.87
+}
+🔹 Feature 3: Vision LLM Reasoning Agent
+Description
+
+Explain detected damage in natural language.
+
+Input
+
+Image
+
+Detected parts
+
+Output Example
+
+"The rear bumper shows moderate deformation consistent with low-speed rear collision. Paint damage is visible and likely requires replacement."
+
+This boosts innovation score.
+
+🔹 Feature 4: Cost Estimation Engine
+Logic
+
+Cost =
+(Part Base Cost × Severity Multiplier)
+
+Labor Cost
+× Regional Multiplier
+
+Example Cost Table
+Part	Minor	Moderate	Severe
+Bumper	3000	6000	12000
+Headlight	2500	5000	9000
+
+Stored in Supabase table.
+
+Output
+
+Itemized breakdown
+
+Total cost
+
+🔹 Feature 5: Fraud Detection Module
+Objective
+
+Detect suspicious claims.
+
+Methods (Hackathon Scope)
+
+Image embedding similarity (CLIP)
+
+Compare with previous claims
+
+If similarity > 0.92 → Flag duplicate
+
+Claim frequency logic
+
+If user > 3 claims in 6 months → Risk increase
+
+Damage inconsistency
+
+Severe model detection + “minor” user description
+
+Output
+
+Fraud Score: 0–100
+
+🔹 Feature 6: Decision Engine
+Logic
+
+Auto Approve If:
+
+Fraud score < 30
+
+Cost < threshold (e.g., ₹15,000)
+
+Manual Review If:
+
+Fraud score 30–70
+
+Cost high
+
+Reject If:
+
+Fraud score > 80
+
+Duplicate image detected
+
+Output Example
+Decision: Pre-Approved
+Confidence: 92%
+Risk Level: Low
+🔹 Feature 7: Dashboard UI
+
+Must Display:
+
+Uploaded image
+
+Highlighted damage
+
+Severity labels
+
+Cost breakdown chart
+
+Fraud score gauge
+
+Final decision badge
+
+AI explanation text
+
+🔹 Feature 8: PDF Claim Report Generator
+
+Generate downloadable report including:
+
+Claim ID
+
+Damage summary
+
+Cost breakdown
+
+Fraud score
+
+Decision status
+
+AI explanation
+
+6️⃣ Supabase Database Schema
+Table: Users
+Field	Type
+id	UUID
+name	Text
+email	Text
+policy_type	Text
+Table: Claims
+Field	Type
+id	UUID
+user_id	UUID
+image_url	Text
+damage_json	JSON
+cost_total	Integer
+fraud_score	Integer
+decision	Text
+created_at	Timestamp
+Table: Cost_Table
+Field	Type
+part_name	Text
+minor_cost	Integer
+moderate_cost	Integer
+severe_cost	Integer
+Table: Fraud_History
+Field	Type
+claim_id	UUID
+image_embedding	Vector
+similarity_score	Float
+7️⃣ Non-Functional Requirements
+
+Response time under 10 seconds
+
+Works with demo images reliably
+
+Clean UI
+
+Modular backend structure
+
+Clear error handling
+
+8️⃣ Success Metrics (For Pitch)
+
+80% reduction in claim processing time
+
+40% fraud detection improvement (simulated stat)
+
+Instant pre-approval under 30 seconds
+
+Scalable architecture
+
+9️⃣ Out of Scope (Avoid Scope Creep)
+
+Real-time insurer integration
+
+Live pricing APIs
+
+Large-scale training
+
+Real policy underwriting logic
+
+Mobile app
+
+🔟 Demo Scenario Plan
+
+Demo 1: Normal claim → Pre-approved
+Demo 2: Duplicate image → Fraud detected
+Demo 3: Severe damage → Manual review
+
+This creates dramatic impact.
+
+🏆 Positioning Statement for Judges
+
+ClaimIQ is not just a damage detector.
+
+It is a modular AI-powered insurance decision system combining:
+
+Computer Vision
+
+Vision LLM reasoning
+
+Fraud detection intelligence
+
+Automated approval engine
+
+Enterprise-ready architecture
