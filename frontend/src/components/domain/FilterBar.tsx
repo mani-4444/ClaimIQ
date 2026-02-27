@@ -1,11 +1,10 @@
-import { useState } from 'react';
-import { Button } from '../ui/Button';
-import { Select } from '../ui/Select';
-import { Input } from '../ui/Input';
-import { cn } from '../../lib/utils';
-import { Search, X, SlidersHorizontal } from 'lucide-react';
-import { CLAIM_TYPES } from '../../constants';
-import type { ClaimStatus } from '../../types';
+import { useState } from "react";
+import { Button } from "../ui/Button";
+import { Select } from "../ui/Select";
+import { Input } from "../ui/Input";
+import { cn } from "../../lib/utils";
+import { Search, X, SlidersHorizontal } from "lucide-react";
+import type { ClaimStatus } from "../../types";
 
 interface FilterBarProps {
   onFilterChange: (filters: FilterValues) => void;
@@ -14,35 +13,25 @@ interface FilterBarProps {
 
 export interface FilterValues {
   search: string;
-  status: ClaimStatus | '';
-  type: string;
+  status: ClaimStatus | "";
   dateFrom: string;
   dateTo: string;
 }
 
 const STATUS_OPTIONS = [
-  { value: '', label: 'All Statuses' },
-  { value: 'SUBMITTED', label: 'Submitted' },
-  { value: 'UNDER_REVIEW', label: 'Under Review' },
-  { value: 'INFO_NEEDED', label: 'Info Needed' },
-  { value: 'APPROVED', label: 'Approved' },
-  { value: 'DENIED', label: 'Denied' },
-  { value: 'FLAGGED', label: 'Flagged' },
-  { value: 'CLOSED', label: 'Closed' },
-];
-
-const TYPE_OPTIONS = [
-  { value: '', label: 'All Types' },
-  ...CLAIM_TYPES.map((t) => ({ value: t.value, label: t.label })),
+  { value: "", label: "All Statuses" },
+  { value: "uploaded", label: "Uploaded" },
+  { value: "processing", label: "Processing" },
+  { value: "processed", label: "Processed" },
+  { value: "error", label: "Error" },
 ];
 
 export function FilterBar({ onFilterChange, className }: FilterBarProps) {
   const [filters, setFilters] = useState<FilterValues>({
-    search: '',
-    status: '',
-    type: '',
-    dateFrom: '',
-    dateTo: '',
+    search: "",
+    status: "",
+    dateFrom: "",
+    dateTo: "",
   });
   const [showAdvanced, setShowAdvanced] = useState(false);
 
@@ -54,20 +43,19 @@ export function FilterBar({ onFilterChange, className }: FilterBarProps) {
 
   const clearFilters = () => {
     const cleared: FilterValues = {
-      search: '',
-      status: '',
-      type: '',
-      dateFrom: '',
-      dateTo: '',
+      search: "",
+      status: "",
+      dateFrom: "",
+      dateTo: "",
     };
     setFilters(cleared);
     onFilterChange(cleared);
   };
 
-  const hasActiveFilters = filters.status || filters.type || filters.dateFrom || filters.dateTo;
+  const hasActiveFilters = filters.status || filters.dateFrom || filters.dateTo;
 
   return (
-    <div className={cn('space-y-3', className)}>
+    <div className={cn("space-y-3", className)}>
       <div className="flex flex-wrap items-center gap-3">
         {/* Search */}
         <div className="relative flex-1 min-w-[200px]">
@@ -76,7 +64,7 @@ export function FilterBar({ onFilterChange, className }: FilterBarProps) {
             type="search"
             placeholder="Search claims..."
             value={filters.search}
-            onChange={(e) => updateFilter('search', e.target.value)}
+            onChange={(e) => updateFilter("search", e.target.value)}
             className="w-full pl-9 pr-4 py-2 text-sm border border-white/[0.08] rounded-lg bg-dark-700/50 text-gray-200 placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500/50 transition-all"
           />
         </div>
@@ -86,20 +74,14 @@ export function FilterBar({ onFilterChange, className }: FilterBarProps) {
           <Select
             options={STATUS_OPTIONS}
             value={filters.status}
-            onChange={(e) => updateFilter('status', e.target.value)}
+            onChange={(e) => updateFilter("status", e.target.value)}
             className="w-40"
-          />
-          <Select
-            options={TYPE_OPTIONS}
-            value={filters.type}
-            onChange={(e) => updateFilter('type', e.target.value)}
-            className="w-36"
           />
         </div>
 
         {/* Advanced filters toggle */}
         <Button
-          variant={showAdvanced ? 'primary' : 'outline'}
+          variant={showAdvanced ? "primary" : "outline"}
           size="sm"
           icon={<SlidersHorizontal className="h-4 w-4" />}
           onClick={() => setShowAdvanced(!showAdvanced)}
@@ -130,28 +112,20 @@ export function FilterBar({ onFilterChange, className }: FilterBarProps) {
                 label="Status"
                 options={STATUS_OPTIONS}
                 value={filters.status}
-                onChange={(e) => updateFilter('status', e.target.value)}
-              />
-            </div>
-            <div className="md:hidden">
-              <Select
-                label="Type"
-                options={TYPE_OPTIONS}
-                value={filters.type}
-                onChange={(e) => updateFilter('type', e.target.value)}
+                onChange={(e) => updateFilter("status", e.target.value)}
               />
             </div>
             <Input
               label="From Date"
               type="date"
               value={filters.dateFrom}
-              onChange={(e) => updateFilter('dateFrom', e.target.value)}
+              onChange={(e) => updateFilter("dateFrom", e.target.value)}
             />
             <Input
               label="To Date"
               type="date"
               value={filters.dateTo}
-              onChange={(e) => updateFilter('dateTo', e.target.value)}
+              onChange={(e) => updateFilter("dateTo", e.target.value)}
             />
           </div>
         </div>

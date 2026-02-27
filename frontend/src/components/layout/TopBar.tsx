@@ -1,9 +1,9 @@
-import { useState, useRef, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import { cn } from '../../lib/utils';
-import { useAuthStore } from '../../store/authStore';
-import { useNotificationStore } from '../../store/notificationStore';
-import { Avatar } from '../ui/Avatar';
+import { useState, useRef, useEffect } from "react";
+import { Link } from "react-router-dom";
+import { cn } from "../../lib/utils";
+import { useAuthStore } from "../../store/authStore";
+import { useNotificationStore } from "../../store/notificationStore";
+import { Avatar } from "../ui/Avatar";
 import {
   Bell,
   Search,
@@ -12,8 +12,8 @@ import {
   Settings,
   User,
   ChevronDown,
-} from 'lucide-react';
-import { formatRelativeTime } from '../../lib/utils';
+} from "lucide-react";
+import { formatRelativeTime } from "../../lib/utils";
 
 interface TopBarProps {
   onMenuToggle: () => void;
@@ -27,7 +27,7 @@ export function TopBar({ onMenuToggle }: TopBarProps) {
 
   const [showNotifications, setShowNotifications] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState("");
 
   const notifRef = useRef<HTMLDivElement>(null);
   const userMenuRef = useRef<HTMLDivElement>(null);
@@ -38,12 +38,15 @@ export function TopBar({ onMenuToggle }: TopBarProps) {
       if (notifRef.current && !notifRef.current.contains(e.target as Node)) {
         setShowNotifications(false);
       }
-      if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node)) {
+      if (
+        userMenuRef.current &&
+        !userMenuRef.current.contains(e.target as Node)
+      ) {
         setShowUserMenu(false);
       }
     };
-    document.addEventListener('mousedown', handleClick);
-    return () => document.removeEventListener('mousedown', handleClick);
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
   }, []);
 
   return (
@@ -79,7 +82,7 @@ export function TopBar({ onMenuToggle }: TopBarProps) {
             <button
               onClick={() => setShowNotifications(!showNotifications)}
               className="relative p-2 rounded-lg text-gray-400 hover:bg-white/[0.06] transition-colors"
-              aria-label={`Notifications${unreadCount > 0 ? `, ${unreadCount} unread` : ''}`}
+              aria-label={`Notifications${unreadCount > 0 ? `, ${unreadCount} unread` : ""}`}
             >
               <Bell className="h-5 w-5" />
               {unreadCount > 0 && (
@@ -92,7 +95,9 @@ export function TopBar({ onMenuToggle }: TopBarProps) {
             {showNotifications && (
               <div className="absolute right-0 mt-2 w-80 glass-surface rounded-xl animate-fade-in">
                 <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.06]">
-                  <h3 className="text-sm font-semibold text-gray-200">Notifications</h3>
+                  <h3 className="text-sm font-semibold text-gray-200">
+                    Notifications
+                  </h3>
                   {unreadCount > 0 && (
                     <button
                       onClick={markAllAsRead}
@@ -111,23 +116,27 @@ export function TopBar({ onMenuToggle }: TopBarProps) {
                     notifications.map((notif) => (
                       <Link
                         key={notif.id}
-                        to={notif.link || '#'}
+                        to={notif.link || "#"}
                         onClick={() => {
                           markAsRead(notif.id);
                           setShowNotifications(false);
                         }}
                         className={cn(
-                          'block px-4 py-3 hover:bg-white/[0.04] transition-colors border-b border-white/[0.04] last:border-0',
-                          !notif.read && 'bg-primary-500/5',
+                          "block px-4 py-3 hover:bg-white/[0.04] transition-colors border-b border-white/[0.04] last:border-0",
+                          !notif.read && "bg-primary-500/5",
                         )}
                       >
                         <div className="flex items-start gap-2">
                           {!notif.read && (
                             <span className="mt-1.5 h-2 w-2 rounded-full bg-primary-500 flex-shrink-0" />
                           )}
-                          <div className={cn(!notif.read ? '' : 'ml-4')}>
-                            <p className="text-sm font-medium text-gray-200">{notif.title}</p>
-                            <p className="text-xs text-gray-500 mt-0.5">{notif.message}</p>
+                          <div className={cn(!notif.read ? "" : "ml-4")}>
+                            <p className="text-sm font-medium text-gray-200">
+                              {notif.title}
+                            </p>
+                            <p className="text-xs text-gray-500 mt-0.5">
+                              {notif.message}
+                            </p>
                             <p className="text-xs text-gray-600 mt-1">
                               {formatRelativeTime(notif.createdAt)}
                             </p>
@@ -148,14 +157,10 @@ export function TopBar({ onMenuToggle }: TopBarProps) {
               className="flex items-center gap-2 p-1.5 rounded-lg hover:bg-white/[0.06] transition-colors"
               aria-label="User menu"
             >
-              <Avatar
-                name={`${user?.firstName || 'U'} ${user?.lastName || ''}`}
-                src={user?.avatar}
-                size="sm"
-              />
+              <Avatar name={user?.name || "U"} src={user?.avatar} size="sm" />
               <div className="hidden md:block text-left">
                 <p className="text-sm font-medium text-gray-200 leading-none">
-                  {user?.firstName} {user?.lastName}
+                  {user?.name}
                 </p>
                 <p className="text-xs text-gray-500 capitalize">{user?.role}</p>
               </div>
