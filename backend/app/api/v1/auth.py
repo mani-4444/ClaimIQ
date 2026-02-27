@@ -18,10 +18,30 @@ router = APIRouter(prefix="/auth", tags=["Authentication"])
 _GOTRUE_URL = f"{settings.SUPABASE_URL}/auth/v1"
 
 
+def _ensure_supabase_auth_configured() -> None:
+    """Fail fast with clear message when Supabase auth settings are placeholders/missing."""
+    invalid_url = (not settings.SUPABASE_URL) or (
+        "your-project.supabase.co" in settings.SUPABASE_URL
+    )
+    invalid_anon = (not settings.SUPABASE_ANON_KEY) or (
+        settings.SUPABASE_ANON_KEY == "your-anon-key"
+    )
+
+    if invalid_url or invalid_anon:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=(
+                "Supabase auth is not configured. Set SUPABASE_URL and "
+                "SUPABASE_ANON_KEY in backend/.env and restart backend."
+            ),
+        )
+
+
 @router.post("/register", response_model=AuthResponse, status_code=status.HTTP_201_CREATED)
 async def register(req: UserRegisterRequest):
     """Register a new user via Supabase Auth (direct HTTP)."""
     try:
+        _ensure_supabase_auth_configured()
         headers = {
             "apikey": settings.SUPABASE_ANON_KEY,
             "Content-Type": "application/json",
@@ -78,6 +98,7 @@ async def register(req: UserRegisterRequest):
 async def login(req: UserLoginRequest):
     """Login user via Supabase Auth (direct HTTP)."""
     try:
+        _ensure_supabase_auth_configured()
         headers = {
             "apikey": settings.SUPABASE_ANON_KEY,
             "Content-Type": "application/json",
@@ -115,6 +136,7 @@ async def login(req: UserLoginRequest):
 async def refresh_token(req: TokenRefreshRequest):
     """Refresh access token."""
     try:
+        _ensure_supabase_auth_configured()
         headers = {
             "apikey": settings.SUPABASE_ANON_KEY,
             "Content-Type": "application/json",

@@ -1,4 +1,5 @@
 import httpx
+import base64
 from typing import List, Optional
 from app.config import settings
 from app.schemas.damage import DamageZone
@@ -75,6 +76,13 @@ class VisionLLMService:
 
     async def _call_gemini(self, image_url: str, prompt: str) -> str:
         async with httpx.AsyncClient(timeout=30) as client:
+            image_resp = await client.get(image_url)
+            image_resp.raise_for_status()
+
+        image_bytes = image_resp.content
+        image_b64 = base64.b64encode(image_bytes).decode("utf-8")
+
+        async with httpx.AsyncClient(timeout=30) as client:
             response = await client.post(
                 f"https://generativelanguage.googleapis.com/v1beta/models/"
                 f"{self.model}:generateContent?key={self.gemini_key}",
@@ -86,7 +94,7 @@ class VisionLLMService:
                                 {
                                     "inline_data": {
                                         "mime_type": "image/jpeg",
-                                        "file_uri": image_url,
+                                        "data": image_b64,
                                     }
                                 },
                             ]
