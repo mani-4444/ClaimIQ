@@ -11,9 +11,14 @@ class VisionLLMService:
 
     SYSTEM_PROMPT = (
         "You are an expert automotive damage assessor for an insurance company. "
-        "Given a vehicle damage image and detected damage categories, provide a concise "
-        "professional assessment. Include: damage description, likely cause, "
-        "repair recommendation. Keep response under 150 words. Be factual and precise."
+        "Given a vehicle damage image and detected damage categories, provide a detailed, "
+        "professional assessment that is factual and grounded only in visible evidence and "
+        "provided detection data. Use this exact structure with short headings: "
+        "1) Observed Damage, 2) Severity Rationale, 3) Likely Incident Pattern, "
+        "4) Repair Recommendations, 5) Safety/Driveability Notes. "
+        "Mention each major detected damage category with quantity and confidence context. "
+        "Avoid legal conclusions and avoid mentioning internal model names. "
+        "Target approximately 180-260 words."
     )
 
     def __init__(self):
@@ -34,7 +39,7 @@ class VisionLLMService:
             f"Analyze this vehicle damage image.\n\n"
             f"Detected damage categories: {damage_summary}\n"
             f"{'User description: ' + user_description if user_description else ''}\n\n"
-            f"Provide a professional damage assessment."
+            "Provide a detailed professional assessment using the required 5-section format."
         )
 
         try:
@@ -66,7 +71,7 @@ class VisionLLMService:
                             ],
                         },
                     ],
-                    "max_tokens": 300,
+                    "max_tokens": 700,
                 },
             )
             response.raise_for_status()
@@ -97,7 +102,11 @@ class VisionLLMService:
                                 },
                             ]
                         }
-                    ]
+                    ],
+                    "generationConfig": {
+                        "maxOutputTokens": 900,
+                        "temperature": 0.3,
+                    },
                 },
             )
             response.raise_for_status()
@@ -106,32 +115,51 @@ class VisionLLMService:
     def _fallback_explanation(self, damage_zones: List[DamageZone]) -> str:
         """Template-based fallback when LLM is unavailable."""
         if not damage_zones:
-            return "No significant damage detected. Manual inspection recommended."
+            return (
+                "Observed Damage: No significant visible damage could be confidently identified from the "
+                "provided image set.\n\n"
+                "Severity Rationale: Current evidence does not indicate concentrated high-severity impact "
+                "zones.\n\n"
+                "Likely Incident Pattern: Insufficient visual evidence to infer a reliable impact pattern.\n\n"
+                "Repair Recommendations: Perform manual workshop inspection for hidden structural, paint, "
+                "and alignment issues before finalizing repair scope.\n\n"
+                "Safety/Driveability Notes: Vehicle may be drivable if no mechanical warning signs are present, "
+                "but caution and physical inspection are recommended."
+            )
 
         damage_summary = self._build_damage_summary(damage_zones)
 
-        severity_max = max(
-            (d.severity for d in damage_zones),
-            key=lambda s: ["minor", "moderate", "severe"].index(s),
-        )
+        severity_max = self._max_severity(damage_zones)
 
         repair_note = (
-            "Immediate repair recommended."
-            if severity_max == "severe"
-            else "Standard repair procedures applicable."
+            "Immediate repair is recommended, including priority checks for structural integrity and lighting/glass safety systems."
+            if severity_max in {"severe", "critical"}
+            else "Standard repair procedures are applicable, with panel refinishing and component replacement as needed."
         )
 
         return (
-            f"Vehicle damage assessment: Detected categories: {damage_summary}. "
-            f"Overall severity is classified as {severity_max}. {repair_note}"
+            f"Observed Damage: Detected categories include {damage_summary}.\n\n"
+            f"Severity Rationale: Overall severity is classified as {severity_max} based on the combined confidence, quantity, and spread of detected damage categories.\n\n"
+            "Likely Incident Pattern: The observed pattern is consistent with localized impact and secondary surface damage around the primary contact area, though exact incident reconstruction requires physical inspection.\n\n"
+            f"Repair Recommendations: {repair_note} Prioritize safety-critical components first, then complete cosmetic and panel restoration.\n\n"
+            "Safety/Driveability Notes: If cracks involve glass or lighting and if any panel fitment is compromised, limit driving until inspection confirms roadworthiness."
         )
+
+    def _max_severity(self, damage_zones: List[DamageZone]) -> str:
+        severity_rank = {"minor": 1, "moderate": 2, "severe": 3, "critical": 4}
+        highest = "minor"
+        for damage in damage_zones:
+            sev = str(getattr(damage, "severity", "minor") or "minor").lower()
+            if severity_rank.get(sev, 1) > severity_rank.get(highest, 1):
+                highest = sev
+        return highest
 
     def _build_damage_summary(self, damages: List[DamageZone]) -> str:
         if not damages:
             return "none"
 
         grouped: dict[str, dict[str, float | int]] = {}
-        severity_rank = {"minor": 1, "moderate": 2, "severe": 3}
+        severity_rank = {"minor": 1, "moderate": 2, "severe": 3, "critical": 4}
 
         for damage in damages:
             damage_type = (getattr(damage, "damage_type", None) or "unknown").strip().lower()

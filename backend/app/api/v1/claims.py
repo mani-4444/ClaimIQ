@@ -17,6 +17,7 @@ from app.schemas.claim import ClaimResponse, ClaimProcessResponse
 from app.utils.constants import ALLOWED_IMAGE_TYPES, MAX_IMAGE_SIZE, MAX_IMAGES_PER_CLAIM
 from app.utils.exceptions import ClaimNotFoundError, ClaimAlreadyProcessedError
 from app.utils.logger import logger
+from app.utils.scoring import compute_overall_severity_score
 
 router = APIRouter(prefix="/claims", tags=["Claims"])
 
@@ -24,23 +25,10 @@ router = APIRouter(prefix="/claims", tags=["Claims"])
 def _compute_damage_severity_score(damage_zones: list | None) -> Optional[int]:
     if not damage_zones:
         return None
-
-    severity_weight = {"minor": 0.35, "moderate": 0.65, "severe": 1.0}
-    weighted_scores: list[float] = []
-
-    for zone in damage_zones:
-        if not isinstance(zone, dict):
-            continue
-        confidence = float(zone.get("confidence", 0.0) or 0.0)
-        severity = str(zone.get("severity", "moderate")).lower()
-        weight = severity_weight.get(severity, 0.65)
-        weighted_scores.append(max(0.0, min(1.0, confidence * weight)))
-
-    if not weighted_scores:
+    normalized = [zone for zone in damage_zones if isinstance(zone, dict)]
+    if not normalized:
         return None
-
-    avg = sum(weighted_scores) / len(weighted_scores)
-    return max(0, min(100, round(avg * 100)))
+    return compute_overall_severity_score(normalized)
 
 
 def _build_claim_service(claim_repo: ClaimRepository) -> ClaimService:

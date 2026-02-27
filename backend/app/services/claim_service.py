@@ -9,6 +9,7 @@ from app.services.storage_service import StorageService
 from app.db.repositories.claim_repo import ClaimRepository
 from app.schemas.claim import ClaimProcessResponse
 from app.utils.logger import logger
+from app.utils.scoring import compute_overall_severity_score
 
 
 class ClaimService:
@@ -34,21 +35,7 @@ class ClaimService:
     def _compute_damage_severity_score(damage_zones: List[dict]) -> int | None:
         if not damage_zones:
             return None
-
-        severity_weight = {"minor": 0.35, "moderate": 0.65, "severe": 1.0}
-        weighted_scores: list[float] = []
-
-        for zone in damage_zones:
-            confidence = float(zone.get("confidence", 0.0) or 0.0)
-            severity = str(zone.get("severity", "moderate")).lower()
-            weight = severity_weight.get(severity, 0.65)
-            weighted_scores.append(max(0.0, min(1.0, confidence * weight)))
-
-        if not weighted_scores:
-            return None
-
-        avg = sum(weighted_scores) / len(weighted_scores)
-        return max(0, min(100, round(avg * 100)))
+        return compute_overall_severity_score(damage_zones)
 
     async def process_claim(
         self,
