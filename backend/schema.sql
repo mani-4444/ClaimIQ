@@ -25,6 +25,8 @@ CREATE TABLE IF NOT EXISTS claims (
     image_urls TEXT[] NOT NULL DEFAULT '{}',
     user_description TEXT,
     policy_number TEXT NOT NULL,
+    vehicle_company TEXT,
+    vehicle_model TEXT,
     incident_date TIMESTAMPTZ,
     location TEXT,
     damage_json JSONB,
@@ -40,6 +42,9 @@ CREATE TABLE IF NOT EXISTS claims (
     created_at TIMESTAMPTZ DEFAULT NOW(),
     processed_at TIMESTAMPTZ
 );
+
+ALTER TABLE claims ADD COLUMN IF NOT EXISTS vehicle_company TEXT;
+ALTER TABLE claims ADD COLUMN IF NOT EXISTS vehicle_model TEXT;
 
 -- ============================================
 -- Table: cost_table (reference data)

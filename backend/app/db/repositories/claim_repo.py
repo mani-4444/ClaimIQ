@@ -15,6 +15,8 @@ class ClaimRepository:
         user_id: str,
         image_urls: List[str],
         policy_number: str,
+        vehicle_company: Optional[str] = None,
+        vehicle_model: Optional[str] = None,
         user_description: Optional[str] = None,
         incident_date: Optional[str] = None,
         location: Optional[str] = None,
@@ -29,7 +31,39 @@ class ClaimRepository:
             "status": "uploaded",
             "decision": "pending",
         }
-        response = self.client.table(self.table).insert(data).execute()
+
+        if vehicle_company:
+            data["vehicle_company"] = vehicle_company
+        if vehicle_model:
+            data["vehicle_model"] = vehicle_model
+
+        try:
+            response = self.client.table(self.table).insert(data).execute()
+        except Exception as e:
+            error_text = str(e).lower()
+            missing_vehicle_column = (
+                ("vehicle_company" in error_text)
+                or ("vehicle_model" in error_text)
+                or (
+                    "column" in error_text
+                    and (
+                        "does not exist" in error_text
+                        or "could not find" in error_text
+                        or "schema cache" in error_text
+                    )
+                )
+            )
+
+            if ("vehicle_company" in data or "vehicle_model" in data) and missing_vehicle_column:
+                logger.warning(
+                    "claims table does not yet include vehicle_company/vehicle_model; retrying create without those fields"
+                )
+                data.pop("vehicle_company", None)
+                data.pop("vehicle_model", None)
+                response = self.client.table(self.table).insert(data).execute()
+            else:
+                raise
+
         logger.info(f"Claim created: {response.data[0]['id']} for user {user_id}")
         return response.data[0]
 

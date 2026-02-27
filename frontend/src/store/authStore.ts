@@ -13,6 +13,7 @@ import {
 interface AuthState {
   user: User | null;
   isAuthenticated: boolean;
+  hydrated: boolean;
   loading: boolean;
   error: string | null;
   login: (email: string, password: string) => Promise<void>;
@@ -30,6 +31,7 @@ interface AuthState {
 export const useAuthStore = create<AuthState>((set) => ({
   user: null,
   isAuthenticated: false,
+  hydrated: false,
   loading: false,
   error: null,
 
@@ -53,7 +55,7 @@ export const useAuthStore = create<AuthState>((set) => ({
         createdAt: new Date().toISOString(),
       };
 
-      set({ user, isAuthenticated: true, loading: false });
+      set({ user, isAuthenticated: true, hydrated: true, loading: false });
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Login failed";
       set({ loading: false, error: message });
@@ -80,7 +82,7 @@ export const useAuthStore = create<AuthState>((set) => ({
         createdAt: new Date().toISOString(),
       };
 
-      set({ user, isAuthenticated: true, loading: false });
+      set({ user, isAuthenticated: true, hydrated: true, loading: false });
     } catch (err: unknown) {
       const message =
         err instanceof Error ? err.message : "Registration failed";
@@ -91,7 +93,7 @@ export const useAuthStore = create<AuthState>((set) => ({
 
   logout: () => {
     clearTokens();
-    set({ user: null, isAuthenticated: false });
+    set({ user: null, isAuthenticated: false, hydrated: true, error: null });
   },
 
   setRole: (role: UserRole) => {
@@ -101,9 +103,14 @@ export const useAuthStore = create<AuthState>((set) => ({
   },
 
   hydrate: async () => {
+    set({ loading: true });
     loadTokens();
     const token = getAccessToken();
-    if (!token) return;
+    if (!token) {
+      set({ user: null, isAuthenticated: false, hydrated: true, loading: false });
+      return;
+    }
+
     try {
       const profile = await apiGetProfile();
       const email = profile.email || "";
@@ -123,10 +130,22 @@ export const useAuthStore = create<AuthState>((set) => ({
           createdAt: profile.created_at || new Date().toISOString(),
         },
         isAuthenticated: true,
+        hydrated: true,
+        loading: false,
+        error: null,
       });
-    } catch {
-      clearTokens();
-      set({ user: null, isAuthenticated: false });
+    } catch (err: unknown) {
+      const status =
+        typeof err === "object" && err !== null && "status" in err
+          ? Number((err as { status?: unknown }).status)
+          : undefined;
+
+      if (status === 401 || status === 403) {
+        clearTokens();
+        set({ user: null, isAuthenticated: false, hydrated: true, loading: false });
+      } else {
+        set({ hydrated: true, loading: false });
+      }
     }
   },
 }));

@@ -21,6 +21,28 @@ from app.utils.logger import logger
 router = APIRouter(prefix="/claims", tags=["Claims"])
 
 
+def _compute_damage_severity_score(damage_zones: list | None) -> Optional[int]:
+    if not damage_zones:
+        return None
+
+    severity_weight = {"minor": 0.35, "moderate": 0.65, "severe": 1.0}
+    weighted_scores: list[float] = []
+
+    for zone in damage_zones:
+        if not isinstance(zone, dict):
+            continue
+        confidence = float(zone.get("confidence", 0.0) or 0.0)
+        severity = str(zone.get("severity", "moderate")).lower()
+        weight = severity_weight.get(severity, 0.65)
+        weighted_scores.append(max(0.0, min(1.0, confidence * weight)))
+
+    if not weighted_scores:
+        return None
+
+    avg = sum(weighted_scores) / len(weighted_scores)
+    return max(0, min(100, round(avg * 100)))
+
+
 def _build_claim_service(claim_repo: ClaimRepository) -> ClaimService:
     """Build claim service dependencies from app state."""
     from app.main import ml_models
@@ -70,14 +92,19 @@ def _build_claim_response(claim: dict) -> ClaimResponse:
     if isinstance(cost_breakdown, str):
         cost_breakdown = json.loads(cost_breakdown)
 
+    damage_severity_score = _compute_damage_severity_score(damage_zones)
+
     return ClaimResponse(
         id=str(claim["id"]),
         user_id=str(claim["user_id"]),
         image_urls=claim.get("image_urls", []),
         user_description=claim.get("user_description"),
         policy_number=claim.get("policy_number", ""),
+        vehicle_company=claim.get("vehicle_company"),
+        vehicle_model=claim.get("vehicle_model"),
         status=claim.get("status", "uploaded"),
         damage_zones=damage_zones,
+        damage_severity_score=damage_severity_score,
         ai_explanation=claim.get("ai_explanation"),
         cost_breakdown=cost_breakdown,
         cost_total=claim.get("cost_total"),
@@ -95,6 +122,8 @@ def _build_claim_response(claim: dict) -> ClaimResponse:
 async def create_claim(
     images: List[UploadFile] = File(..., description="Vehicle damage images (JPG/PNG, max 5)"),
     policy_number: str = Form(...),
+    vehicle_company: Optional[str] = Form(None),
+    vehicle_model: Optional[str] = Form(None),
     user_description: Optional[str] = Form(None),
     incident_date: Optional[str] = Form(None),
     location: Optional[str] = Form(None),
@@ -140,6 +169,8 @@ async def create_claim(
         user_id=current_user["id"],
         image_urls=image_urls,
         policy_number=policy_number,
+        vehicle_company=vehicle_company,
+        vehicle_model=vehicle_model,
         user_description=user_description,
         incident_date=incident_date,
         location=location,
@@ -149,7 +180,12 @@ async def create_claim(
     claim_service = _build_claim_service(claim_repo)
 
     try:
-        processed = await claim_service.process_claim(claim["id"], current_user["id"])
+        processed = await claim_service.process_claim(
+            claim["id"],
+            current_user["id"],
+            vehicle_company=vehicle_company,
+            vehicle_model=vehicle_model,
+        )
         return processed
     except Exception as e:
         logger.error(f"Auto-processing failed for claim {claim['id']}: {e}")
@@ -168,6 +204,16 @@ async def list_claims(current_user: dict = Depends(get_current_user)):
     claim_repo = ClaimRepository()
     claims = await claim_repo.list_by_user(current_user["id"])
     return [_build_claim_response(c) for c in claims]
+
+
+@router.get("/vehicle-options")
+async def get_vehicle_options():
+    """Return vehicle company/model dropdown values from pricing table."""
+    options = await CostRepository().get_vehicle_options()
+    return {
+        "companies": sorted(options.keys()),
+        "models_by_company": options,
+    }
 
 
 @router.get("/{claim_id}", response_model=ClaimResponse)

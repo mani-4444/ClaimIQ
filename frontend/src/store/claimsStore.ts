@@ -17,8 +17,11 @@ function toClaim(c: ClaimResponse): Claim {
     image_urls: c.image_urls,
     user_description: c.user_description,
     policy_number: c.policy_number,
+    vehicle_company: c.vehicle_company,
+    vehicle_model: c.vehicle_model,
     status: c.status as Claim["status"],
     damage_zones: c.damage_zones as Claim["damage_zones"],
+    damage_severity_score: c.damage_severity_score,
     ai_explanation: c.ai_explanation,
     cost_breakdown: c.cost_breakdown as Claim["cost_breakdown"],
     cost_total: c.cost_total,
@@ -43,6 +46,8 @@ interface ClaimsState {
   createClaim: (
     images: File[],
     policyNumber: string,
+    vehicleCompany?: string,
+    vehicleModel?: string,
     description?: string,
     incidentDate?: string,
     location?: string,
@@ -88,6 +93,8 @@ export const useClaimsStore = create<ClaimsState>((set) => ({
   createClaim: async (
     images,
     policyNumber,
+    vehicleCompany,
+    vehicleModel,
     description,
     incidentDate,
     location,
@@ -97,6 +104,8 @@ export const useClaimsStore = create<ClaimsState>((set) => ({
       const res = await apiCreateClaim(
         images,
         policyNumber,
+        vehicleCompany,
+        vehicleModel,
         description,
         incidentDate,
         location,
