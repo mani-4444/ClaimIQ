@@ -16,7 +16,7 @@ AS $$
 BEGIN
     RETURN QUERY
     SELECT
-        fh.claim_id,
+        fh.claim_id,        
         1 - (fh.image_embedding <=> query_embedding) AS similarity
     FROM fraud_history fh
     WHERE fh.claim_id != COALESCE(exclude_claim, '00000000-0000-0000-0000-000000000000'::UUID)

@@ -1,0 +1,242 @@
+/**
+ * ClaimIQ API Client
+ * Connects frontend to the FastAPI backend at /api/v1/
+ */
+
+const API_BASE = "/api/v1";
+
+// ---------- token helpers ----------
+let accessToken: string | null = null;
+let refreshToken: string | null = null;
+
+export function setTokens(access: string, refresh: string) {
+  accessToken = access;
+  refreshToken = refresh;
+  localStorage.setItem("claimiq_access_token", access);
+  localStorage.setItem("claimiq_refresh_token", refresh);
+}
+
+export function loadTokens() {
+  accessToken = localStorage.getItem("claimiq_access_token");
+  refreshToken = localStorage.getItem("claimiq_refresh_token");
+}
+
+export function clearTokens() {
+  accessToken = null;
+  refreshToken = null;
+  localStorage.removeItem("claimiq_access_token");
+  localStorage.removeItem("claimiq_refresh_token");
+}
+
+export function getAccessToken() {
+  if (!accessToken) loadTokens();
+  return accessToken;
+}
+
+// ---------- generic fetch wrapper ----------
+async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
+  const url = `${API_BASE}${path}`;
+  const headers: Record<string, string> = {
+    ...((options.headers as Record<string, string>) ?? {}),
+  };
+
+  // Don't set Content-Type for FormData (browser sets multipart boundary)
+  if (!(options.body instanceof FormData)) {
+    headers["Content-Type"] = "application/json";
+  }
+
+  const token = getAccessToken();
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+  }
+
+  const res = await fetch(url, { ...options, headers });
+
+  if (res.status === 401 && refreshToken) {
+    // Try to refresh
+    const refreshed = await refreshAccessToken();
+    if (refreshed) {
+      headers["Authorization"] = `Bearer ${accessToken}`;
+      const retry = await fetch(url, { ...options, headers });
+      if (!retry.ok) {
+        const err = await retry
+          .json()
+          .catch(() => ({ detail: retry.statusText }));
+        throw new ApiError(retry.status, err.detail || "Request failed");
+      }
+      if (retry.status === 204) return undefined as T;
+      return retry.json();
+    }
+  }
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: res.statusText }));
+    throw new ApiError(res.status, err.detail || "Request failed");
+  }
+
+  if (res.status === 204) return undefined as T;
+  return res.json();
+}
+
+export class ApiError extends Error {
+  constructor(
+    public status: number,
+    message: string,
+  ) {
+    super(message);
+    this.name = "ApiError";
+  }
+}
+
+// ---------- Auth ----------
+export interface AuthResponse {
+  id: string;
+  name: string;
+  email: string;
+  access_token: string;
+  refresh_token: string;
+}
+
+export interface UserProfile {
+  id: string;
+  name: string;
+  email: string;
+  policy_type?: string;
+  created_at?: string;
+}
+
+export async function apiRegister(
+  name: string,
+  email: string,
+  password: string,
+  policyType?: string,
+): Promise<AuthResponse> {
+  const body: Record<string, string> = { name, email, password };
+  if (policyType) body.policy_type = policyType;
+  return request<AuthResponse>("/auth/register", {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+}
+
+export async function apiLogin(
+  email: string,
+  password: string,
+): Promise<AuthResponse> {
+  return request<AuthResponse>("/auth/login", {
+    method: "POST",
+    body: JSON.stringify({ email, password }),
+  });
+}
+
+async function refreshAccessToken(): Promise<boolean> {
+  try {
+    const res = await fetch(`${API_BASE}/auth/refresh`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ refresh_token: refreshToken }),
+    });
+    if (!res.ok) return false;
+    const data = await res.json();
+    accessToken = data.access_token;
+    localStorage.setItem("claimiq_access_token", data.access_token);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export async function apiGetProfile(): Promise<UserProfile> {
+  return request<UserProfile>("/auth/me");
+}
+
+// ---------- Claims ----------
+export interface DamageZone {
+  zone: string;
+  severity: string;
+  confidence: number;
+  bounding_box: number[];
+}
+
+export interface CostBreakdown {
+  zone: string;
+  severity: string;
+  base_cost: number;
+  labor_cost: number;
+  regional_multiplier: number;
+  total: number;
+}
+
+export interface ClaimResponse {
+  id: string;
+  user_id: string;
+  image_urls: string[];
+  user_description?: string;
+  policy_number: string;
+  status: string; // uploaded | processing | processed | error
+  damage_zones?: DamageZone[];
+  ai_explanation?: string;
+  cost_breakdown?: CostBreakdown[];
+  cost_total?: number;
+  fraud_score?: number;
+  fraud_flags?: string[];
+  decision?: string; // pending | pre_approved | manual_review | rejected
+  decision_confidence?: number;
+  risk_level?: string; // low | medium | high
+  created_at: string;
+  processed_at?: string;
+}
+
+export interface ClaimProcessResponse extends ClaimResponse {
+  processing_time_ms: number;
+}
+
+export async function apiCreateClaim(
+  images: File[],
+  policyNumber: string,
+  description?: string,
+  incidentDate?: string,
+  location?: string,
+): Promise<ClaimResponse> {
+  const formData = new FormData();
+  images.forEach((img) => formData.append("images", img));
+  formData.append("policy_number", policyNumber);
+  if (description) formData.append("user_description", description);
+  if (incidentDate) formData.append("incident_date", incidentDate);
+  if (location) formData.append("location", location);
+  return request<ClaimResponse>("/claims", { method: "POST", body: formData });
+}
+
+export async function apiListClaims(): Promise<ClaimResponse[]> {
+  return request<ClaimResponse[]>("/claims");
+}
+
+export async function apiGetClaim(claimId: string): Promise<ClaimResponse> {
+  return request<ClaimResponse>(`/claims/${claimId}`);
+}
+
+export async function apiProcessClaim(
+  claimId: string,
+): Promise<ClaimProcessResponse> {
+  return request<ClaimProcessResponse>(`/claims/${claimId}/process`, {
+    method: "POST",
+  });
+}
+
+export async function apiDeleteClaim(claimId: string): Promise<void> {
+  return request<void>(`/claims/${claimId}`, { method: "DELETE" });
+}
+
+export function getReportDownloadUrl(claimId: string): string {
+  return `${API_BASE}/claims/${claimId}/report`;
+}
+
+export async function apiDownloadReport(claimId: string): Promise<Blob> {
+  const url = getReportDownloadUrl(claimId);
+  const headers: Record<string, string> = {};
+  const token = getAccessToken();
+  if (token) headers["Authorization"] = `Bearer ${token}`;
+  const res = await fetch(url, { headers });
+  if (!res.ok) throw new ApiError(res.status, "Download failed");
+  return res.blob();
+}
