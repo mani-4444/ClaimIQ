@@ -95,9 +95,16 @@ Technical Implementation
 
 YOLOv8 pretrained model (fine-tuned if possible)
 
+The model classifies damage into 4 vehicle zones that together cover the entire vehicle:
+
+1. Front (bumper, hood, headlights, grille, windshield)
+2. Rear (rear bumper, trunk, taillights, rear windshield)
+3. Left Side (left doors, left fender, left mirror, left quarter panel)
+4. Right Side (right doors, right fender, right mirror, right quarter panel)
+
 Output:
 
-Part name (bumper, hood, headlight)
+Zone name (Front / Rear / Left Side / Right Side)
 
 Bounding box
 
@@ -105,7 +112,7 @@ Severity classification (minor/moderate/severe)
 
 Output Example
 {
-  "part": "Rear Bumper",
+  "zone": "Rear",
   "severity": "Moderate",
   "confidence": 0.87
 }
@@ -122,7 +129,7 @@ Detected parts
 
 Output Example
 
-"The rear bumper shows moderate deformation consistent with low-speed rear collision. Paint damage is visible and likely requires replacement."
+"The Rear zone shows moderate deformation consistent with a low-speed rear collision. Paint damage is visible on the bumper area and likely requires panel replacement."
 
 This boosts innovation score.
 
@@ -135,10 +142,12 @@ Cost =
 Labor Cost
 × Regional Multiplier
 
-Example Cost Table
-Part	Minor	Moderate	Severe
-Bumper	3000	6000	12000
-Headlight	2500	5000	9000
+Example Cost Table (per zone)
+Zone		Minor	Moderate	Severe
+Front		5000	15000		35000
+Rear		4000	12000		28000
+Left Side	4500	13000		30000
+Right Side	4500	13000		30000
 
 Stored in Supabase table.
 
@@ -251,7 +260,7 @@ decision	Text
 created_at	Timestamp
 Table: Cost_Table
 Field	Type
-part_name	Text
+zone_name	Text (Front / Rear / Left Side / Right Side)
 minor_cost	Integer
 moderate_cost	Integer
 severe_cost	Integer
