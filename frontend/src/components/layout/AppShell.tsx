@@ -9,7 +9,7 @@ export function AppShell() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen">
       <a href="#main-content" className="skip-link">
         Skip to main content
       </a>
@@ -17,7 +17,7 @@ export function AppShell() {
       {/* Mobile overlay */}
       {mobileMenuOpen && (
         <div
-          className="fixed inset-0 z-30 bg-black/50 lg:hidden"
+          className="fixed inset-0 z-30 bg-black/60 backdrop-blur-sm lg:hidden"
           onClick={() => setMobileMenuOpen(false)}
         />
       )}

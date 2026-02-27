@@ -25,7 +25,7 @@ export function Avatar({ src, name, size = 'md', className }: AvatarProps) {
         src={src}
         alt={name}
         className={cn(
-          'rounded-full object-cover',
+          'rounded-full object-cover ring-2 ring-white/[0.08]',
           sizeClasses[size],
           className,
         )}
@@ -36,7 +36,7 @@ export function Avatar({ src, name, size = 'md', className }: AvatarProps) {
   return (
     <div
       className={cn(
-        'inline-flex items-center justify-center rounded-full bg-primary-100 text-primary-700 font-medium',
+        'inline-flex items-center justify-center rounded-full bg-primary-500/20 text-primary-400 font-medium ring-2 ring-primary-500/20',
         sizeClasses[size],
         className,
       )}

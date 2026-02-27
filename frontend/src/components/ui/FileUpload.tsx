@@ -98,10 +98,10 @@ export function FileUpload({
         onDragOver={handleDrag}
         onDrop={handleDrop}
         className={cn(
-          'relative border-2 border-dashed rounded-lg p-8 text-center transition-colors cursor-pointer',
+          'relative border-2 border-dashed rounded-xl p-8 text-center transition-all cursor-pointer',
           dragActive
-            ? 'border-primary-500 bg-primary-50'
-            : 'border-gray-300 hover:border-gray-400 bg-gray-50',
+            ? 'border-primary-500 bg-primary-500/10'
+            : 'border-white/[0.1] hover:border-white/[0.2] bg-dark-700/30',
         )}
       >
         <input
@@ -112,8 +112,8 @@ export function FileUpload({
           className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
           aria-label="Upload files"
         />
-        <Upload className="mx-auto h-10 w-10 text-gray-400 mb-3" />
-        <p className="text-sm font-medium text-gray-700">
+        <Upload className="mx-auto h-10 w-10 text-gray-500 mb-3" />
+        <p className="text-sm font-medium text-gray-300">
           Drag & drop files here, or click to browse
         </p>
         <p className="text-xs text-gray-500 mt-1">
@@ -124,7 +124,7 @@ export function FileUpload({
       {errors.length > 0 && (
         <div className="space-y-1">
           {errors.map((error, i) => (
-            <p key={i} className="flex items-center gap-1.5 text-xs text-red-600">
+            <p key={i} className="flex items-center gap-1.5 text-xs text-red-400">
               <AlertCircle className="h-3.5 w-3.5 flex-shrink-0" />
               {error}
             </p>
@@ -137,17 +137,17 @@ export function FileUpload({
           {files.map((file, index) => (
             <li
               key={`${file.name}-${index}`}
-              className="flex items-center gap-3 bg-white border border-gray-200 rounded-md px-3 py-2"
+              className="flex items-center gap-3 bg-dark-700/50 border border-white/[0.06] rounded-lg px-3 py-2"
             >
-              <FileIcon className="h-4 w-4 text-gray-400 flex-shrink-0" />
+              <FileIcon className="h-4 w-4 text-gray-500 flex-shrink-0" />
               <div className="flex-1 min-w-0">
-                <p className="text-sm text-gray-700 truncate">{file.name}</p>
+                <p className="text-sm text-gray-300 truncate">{file.name}</p>
                 <p className="text-xs text-gray-500">{formatFileSize(file.size)}</p>
               </div>
               <button
                 type="button"
                 onClick={() => removeFile(index)}
-                className="p-1 rounded text-gray-400 hover:text-red-500 transition-colors"
+                className="p-1 rounded text-gray-500 hover:text-red-400 transition-colors"
                 aria-label={`Remove ${file.name}`}
               >
                 <X className="h-4 w-4" />

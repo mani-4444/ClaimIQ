@@ -75,10 +75,10 @@ export function ClaimDetailPage() {
       <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
         <div>
           <div className="flex items-center gap-3 mb-2">
-            <h1 className="text-2xl font-bold text-gray-900">{claim.claimNumber}</h1>
+            <h1 className="text-2xl font-bold text-white">{claim.claimNumber}</h1>
             <ClaimStatusBadge status={claim.status} />
           </div>
-          <p className="text-gray-600">{claim.title}</p>
+          <p className="text-gray-400">{claim.title}</p>
         </div>
         {permissions.canApproveDeny && claim.status !== 'APPROVED' && claim.status !== 'DENIED' && claim.status !== 'CLOSED' && (
           <DecisionPanel claimNumber={claim.claimNumber} onDecision={handleDecision} />
@@ -93,43 +93,43 @@ export function ClaimDetailPage() {
             <CardHeader>
               <CardTitle>Claim Details</CardTitle>
             </CardHeader>
-            <p className="text-sm text-gray-600 mb-4">{claim.description}</p>
+            <p className="text-sm text-gray-400 mb-4">{claim.description}</p>
 
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
               <div className="flex items-center gap-2">
-                <Hash className="h-4 w-4 text-gray-400" />
+                <Hash className="h-4 w-4 text-gray-500" />
                 <div>
                   <p className="text-xs text-gray-500">Policy</p>
-                  <p className="text-sm font-medium text-gray-900">{claim.policyNumber}</p>
+                  <p className="text-sm font-medium text-gray-200">{claim.policyNumber}</p>
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                <DollarSign className="h-4 w-4 text-gray-400" />
+                <DollarSign className="h-4 w-4 text-gray-500" />
                 <div>
                   <p className="text-xs text-gray-500">Amount</p>
-                  <p className="text-sm font-medium text-gray-900">{formatCurrency(claim.amount)}</p>
+                  <p className="text-sm font-medium text-gray-200">{formatCurrency(claim.amount)}</p>
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                <Calendar className="h-4 w-4 text-gray-400" />
+                <Calendar className="h-4 w-4 text-gray-500" />
                 <div>
                   <p className="text-xs text-gray-500">Submitted</p>
-                  <p className="text-sm font-medium text-gray-900">{formatDate(claim.submittedAt)}</p>
+                  <p className="text-sm font-medium text-gray-200">{formatDate(claim.submittedAt)}</p>
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                <User className="h-4 w-4 text-gray-400" />
+                <User className="h-4 w-4 text-gray-500" />
                 <div>
                   <p className="text-xs text-gray-500">Policyholder</p>
-                  <p className="text-sm font-medium text-gray-900">{claim.policyholderName}</p>
+                  <p className="text-sm font-medium text-gray-200">{claim.policyholderName}</p>
                 </div>
               </div>
               {claim.assignedTo && (
                 <div className="flex items-center gap-2">
-                  <User className="h-4 w-4 text-gray-400" />
+                  <User className="h-4 w-4 text-gray-500" />
                   <div>
                     <p className="text-xs text-gray-500">Assigned To</p>
-                    <p className="text-sm font-medium text-gray-900">{claim.assignedTo}</p>
+                    <p className="text-sm font-medium text-gray-200">{claim.assignedTo}</p>
                   </div>
                 </div>
               )}
@@ -160,12 +160,12 @@ export function ClaimDetailPage() {
                       {claim.documents.map((doc) => (
                         <li
                           key={doc.id}
-                          className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+                          className="flex items-center justify-between p-3 bg-dark-700/50 rounded-lg border border-white/[0.04] hover:bg-dark-600/50 transition-colors"
                         >
                           <div className="flex items-center gap-3 min-w-0">
-                            <FileText className="h-5 w-5 text-gray-400 flex-shrink-0" />
+                            <FileText className="h-5 w-5 text-gray-500 flex-shrink-0" />
                             <div className="min-w-0">
-                              <p className="text-sm font-medium text-gray-900 truncate">
+                              <p className="text-sm font-medium text-gray-200 truncate">
                                 {doc.name}
                               </p>
                               <p className="text-xs text-gray-500">
@@ -175,13 +175,13 @@ export function ClaimDetailPage() {
                           </div>
                           <div className="flex items-center gap-1">
                             <button
-                              className="p-1.5 text-gray-400 hover:text-gray-600 rounded transition-colors"
+                              className="p-1.5 text-gray-500 hover:text-gray-300 rounded transition-colors"
                               aria-label={`Preview ${doc.name}`}
                             >
                               <ExternalLink className="h-4 w-4" />
                             </button>
                             <button
-                              className="p-1.5 text-gray-400 hover:text-gray-600 rounded transition-colors"
+                              className="p-1.5 text-gray-500 hover:text-gray-300 rounded transition-colors"
                               aria-label={`Download ${doc.name}`}
                             >
                               <Download className="h-4 w-4" />
@@ -224,19 +224,19 @@ export function ClaimDetailPage() {
             <div className="space-y-3 text-sm">
               <div className="flex justify-between">
                 <span className="text-gray-500">Policy #</span>
-                <span className="font-medium text-gray-900">{claim.policyNumber}</span>
+                <span className="font-medium text-gray-200">{claim.policyNumber}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-500">Type</span>
-                <span className="font-medium text-gray-900 capitalize">{claim.type}</span>
+                <span className="font-medium text-gray-200 capitalize">{claim.type}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-500">Holder</span>
-                <span className="font-medium text-gray-900">{claim.policyholderName}</span>
+                <span className="font-medium text-gray-200">{claim.policyholderName}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-500">Claim Value</span>
-                <span className="font-medium text-gray-900">{formatCurrency(claim.amount)}</span>
+                <span className="font-medium text-gray-200">{formatCurrency(claim.amount)}</span>
               </div>
             </div>
           </Card>

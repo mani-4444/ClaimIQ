@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../store/authStore';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
-import { Shield } from 'lucide-react';
+import { Shield, Sparkles } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -45,17 +45,24 @@ export function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4 py-12">
-      <div className="w-full max-w-md">
+    <div className="min-h-screen flex items-center justify-center px-4 py-12 relative overflow-hidden">
+      {/* Animated background orbs */}
+      <div className="absolute top-1/4 -left-32 w-64 h-64 bg-primary-500/10 rounded-full blur-3xl animate-float" />
+      <div className="absolute bottom-1/4 -right-32 w-80 h-80 bg-primary-700/10 rounded-full blur-3xl animate-float" style={{ animationDelay: '3s' }} />
+
+      <div className="w-full max-w-md relative z-10">
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center h-14 w-14 bg-primary-600 rounded-2xl mb-4">
-            <Shield className="h-8 w-8 text-white" />
+          <div className="inline-flex items-center justify-center h-16 w-16 bg-gradient-to-br from-primary-500 to-primary-700 rounded-2xl mb-4 shadow-glow-blue animate-glow">
+            <Shield className="h-9 w-9 text-white" />
           </div>
-          <h1 className="text-2xl font-bold text-gray-900">Create your account</h1>
-          <p className="text-sm text-gray-500 mt-1">Start managing your insurance claims</p>
+          <h1 className="text-2xl font-bold text-white">Create your account</h1>
+          <div className="flex items-center justify-center gap-1.5 mt-1">
+            <Sparkles className="h-3.5 w-3.5 text-primary-400" />
+            <p className="text-sm text-gray-500">Start managing your insurance claims</p>
+          </div>
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <div className="glass-card rounded-2xl p-6">
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <Input
@@ -101,7 +108,7 @@ export function RegisterPage() {
 
         <p className="text-center text-sm text-gray-500 mt-6">
           Already have an account?{' '}
-          <Link to="/login" className="text-primary-600 hover:text-primary-700 font-medium">
+          <Link to="/login" className="text-primary-400 hover:text-primary-300 font-medium transition-colors">
             Sign in
           </Link>
         </p>

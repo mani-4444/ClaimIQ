@@ -18,24 +18,24 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
         {label && (
           <label
             htmlFor={inputId}
-            className="block text-sm font-medium text-gray-700"
+            className="block text-sm font-medium text-gray-300"
           >
             {label}
-            {props.required && <span className="text-red-500 ml-0.5">*</span>}
+            {props.required && <span className="text-red-400 ml-0.5">*</span>}
           </label>
         )}
         <input
           ref={ref}
           id={inputId}
           className={cn(
-            'block w-full rounded-md border px-3 py-2 text-sm shadow-sm transition-colors duration-[var(--transition-fast)]',
-            'placeholder:text-gray-400',
+            'block w-full rounded-lg border px-3 py-2 text-sm transition-all duration-[var(--transition-fast)]',
+            'bg-dark-700/50 text-gray-200 placeholder:text-gray-500',
             'focus:outline-none focus:ring-2 focus:ring-offset-0',
-            'disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed',
-            'read-only:bg-gray-50',
+            'disabled:bg-dark-800 disabled:text-gray-500 disabled:cursor-not-allowed',
+            'read-only:bg-dark-800/50',
             error
-              ? 'border-red-500 focus:border-red-500 focus:ring-red-200'
-              : 'border-gray-300 focus:border-primary-500 focus:ring-primary-200',
+              ? 'border-red-500/50 focus:border-red-500 focus:ring-red-500/20'
+              : 'border-white/[0.08] focus:border-primary-500 focus:ring-primary-500/20',
             className,
           )}
           aria-invalid={error ? 'true' : undefined}
@@ -50,7 +50,7 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
           </p>
         )}
         {error && (
-          <p id={errorId} className="text-xs text-red-600" role="alert">
+          <p id={errorId} className="text-xs text-red-400" role="alert">
             {error}
           </p>
         )}

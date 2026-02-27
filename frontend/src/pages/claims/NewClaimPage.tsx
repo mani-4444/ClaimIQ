@@ -97,7 +97,7 @@ export function NewClaimPage() {
       />
 
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">File a New Claim</h1>
+        <h1 className="text-2xl font-bold text-white">File a New Claim</h1>
         <p className="text-sm text-gray-500 mt-1">
           Complete all steps to submit your insurance claim.
         </p>
@@ -110,7 +110,7 @@ export function NewClaimPage() {
           {/* Step 1: Claim Type */}
           {currentStep === 0 && (
             <div className="space-y-4">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Claim Information</h2>
+              <h2 className="text-lg font-semibold text-white mb-4">Claim Information</h2>
               <Select
                 label="Claim Type"
                 options={CLAIM_TYPES.map((t) => ({ value: t.value, label: t.label }))}
@@ -132,7 +132,7 @@ export function NewClaimPage() {
           {/* Step 2: Details */}
           {currentStep === 1 && (
             <div className="space-y-4">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Incident Details</h2>
+              <h2 className="text-lg font-semibold text-white mb-4">Incident Details</h2>
               <Input
                 label="Claim Title"
                 placeholder="Brief description of the incident"
@@ -171,7 +171,7 @@ export function NewClaimPage() {
           {/* Step 3: Documents */}
           {currentStep === 2 && (
             <div className="space-y-4">
-              <h2 className="text-lg font-semibold text-gray-900 mb-2">Supporting Documents</h2>
+              <h2 className="text-lg font-semibold text-white mb-2">Supporting Documents</h2>
               <p className="text-sm text-gray-500 mb-4">
                 Upload any relevant documents such as police reports, photos, receipts, or medical records.
               </p>
@@ -182,39 +182,39 @@ export function NewClaimPage() {
           {/* Step 4: Review */}
           {currentStep === 3 && (
             <div className="space-y-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Review Your Claim</h2>
+              <h2 className="text-lg font-semibold text-white mb-4">Review Your Claim</h2>
 
-              <div className="bg-gray-50 rounded-lg p-4 space-y-3">
+              <div className="bg-dark-700/50 rounded-xl p-4 border border-white/[0.06] space-y-3">
                 <div className="grid grid-cols-2 gap-3 text-sm">
                   <div>
                     <p className="text-gray-500">Claim Type</p>
-                    <p className="font-medium text-gray-900 capitalize">{formValues.type}</p>
+                    <p className="font-medium text-gray-200 capitalize">{formValues.type}</p>
                   </div>
                   <div>
                     <p className="text-gray-500">Policy Number</p>
-                    <p className="font-medium text-gray-900">{formValues.policyNumber}</p>
+                    <p className="font-medium text-gray-200">{formValues.policyNumber}</p>
                   </div>
                   <div className="col-span-2">
                     <p className="text-gray-500">Title</p>
-                    <p className="font-medium text-gray-900">{formValues.title}</p>
+                    <p className="font-medium text-gray-200">{formValues.title}</p>
                   </div>
                   <div className="col-span-2">
                     <p className="text-gray-500">Description</p>
-                    <p className="font-medium text-gray-900">{formValues.description}</p>
+                    <p className="font-medium text-gray-200">{formValues.description}</p>
                   </div>
                   <div>
                     <p className="text-gray-500">Amount</p>
-                    <p className="font-medium text-gray-900">
+                    <p className="font-medium text-gray-200">
                       {formValues.amount ? formatCurrency(Number(formValues.amount)) : '—'}
                     </p>
                   </div>
                   <div>
                     <p className="text-gray-500">Incident Date</p>
-                    <p className="font-medium text-gray-900">{formValues.incidentDate}</p>
+                    <p className="font-medium text-gray-200">{formValues.incidentDate}</p>
                   </div>
                   <div className="col-span-2">
                     <p className="text-gray-500">Documents</p>
-                    <p className="font-medium text-gray-900">
+                    <p className="font-medium text-gray-200">
                       {files.length} file{files.length !== 1 ? 's' : ''} attached
                     </p>
                   </div>
@@ -224,7 +224,7 @@ export function NewClaimPage() {
           )}
 
           {/* Navigation buttons */}
-          <div className="flex items-center justify-between mt-8 pt-6 border-t border-gray-200">
+          <div className="flex items-center justify-between mt-8 pt-6 border-t border-white/[0.06]">
             <Button
               type="button"
               variant="ghost"

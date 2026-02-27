@@ -53,19 +53,19 @@ export function ClaimsListPage() {
       {/* Page header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Claims</h1>
+          <h1 className="text-2xl font-bold text-white">Claims</h1>
           <p className="text-sm text-gray-500 mt-1">
             {filteredClaims.length} claim{filteredClaims.length !== 1 ? 's' : ''} found
           </p>
         </div>
         <div className="flex items-center gap-3">
           {/* View mode toggle */}
-          <div className="hidden sm:flex items-center border border-gray-300 rounded-md">
+          <div className="hidden sm:flex items-center border border-white/[0.08] rounded-lg overflow-hidden">
             <button
               onClick={() => setViewMode('table')}
               className={cn(
                 'p-2 transition-colors',
-                viewMode === 'table' ? 'bg-gray-100 text-gray-900' : 'text-gray-400 hover:text-gray-600',
+                viewMode === 'table' ? 'bg-white/[0.08] text-gray-200' : 'text-gray-500 hover:text-gray-300',
               )}
               aria-label="Table view"
             >
@@ -75,7 +75,7 @@ export function ClaimsListPage() {
               onClick={() => setViewMode('grid')}
               className={cn(
                 'p-2 transition-colors',
-                viewMode === 'grid' ? 'bg-gray-100 text-gray-900' : 'text-gray-400 hover:text-gray-600',
+                viewMode === 'grid' ? 'bg-white/[0.08] text-gray-200' : 'text-gray-500 hover:text-gray-300',
               )}
               aria-label="Grid view"
             >
@@ -115,46 +115,46 @@ export function ClaimsListPage() {
           ))}
         </div>
       ) : (
-        <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+        <div className="glass-card rounded-xl overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-sm" role="table">
               <thead>
-                <tr className="border-b border-gray-200 bg-gray-50">
-                  <th className="text-left px-4 py-3 font-medium text-gray-500">Claim #</th>
-                  <th className="text-left px-4 py-3 font-medium text-gray-500">Title</th>
-                  <th className="text-left px-4 py-3 font-medium text-gray-500">Type</th>
-                  <th className="text-left px-4 py-3 font-medium text-gray-500">Status</th>
-                  <th className="text-left px-4 py-3 font-medium text-gray-500">Amount</th>
-                  <th className="text-left px-4 py-3 font-medium text-gray-500">Date</th>
-                  <th className="text-left px-4 py-3 font-medium text-gray-500">Policyholder</th>
+                <tr className="border-b border-white/[0.06] bg-dark-700/50">
+                  <th className="text-left px-4 py-3 font-medium text-gray-400">Claim #</th>
+                  <th className="text-left px-4 py-3 font-medium text-gray-400">Title</th>
+                  <th className="text-left px-4 py-3 font-medium text-gray-400">Type</th>
+                  <th className="text-left px-4 py-3 font-medium text-gray-400">Status</th>
+                  <th className="text-left px-4 py-3 font-medium text-gray-400">Amount</th>
+                  <th className="text-left px-4 py-3 font-medium text-gray-400">Date</th>
+                  <th className="text-left px-4 py-3 font-medium text-gray-400">Policyholder</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredClaims.map((claim) => (
                   <tr
                     key={claim.id}
-                    className="border-b border-gray-100 hover:bg-gray-50 transition-colors cursor-pointer"
+                    className="border-b border-white/[0.04] hover:bg-white/[0.03] transition-colors cursor-pointer"
                   >
                     <td className="px-4 py-3">
                       <Link
                         to={`/claims/${claim.id}`}
-                        className="font-mono text-primary-600 hover:text-primary-700 font-medium"
+                        className="font-mono text-primary-400 hover:text-primary-300 font-medium transition-colors"
                       >
                         {claim.claimNumber}
                       </Link>
                     </td>
-                    <td className="px-4 py-3 text-gray-900 max-w-[200px] truncate">
+                    <td className="px-4 py-3 text-gray-200 max-w-[200px] truncate">
                       {claim.title}
                     </td>
-                    <td className="px-4 py-3 text-gray-500 capitalize">{claim.type}</td>
+                    <td className="px-4 py-3 text-gray-400 capitalize">{claim.type}</td>
                     <td className="px-4 py-3">
                       <ClaimStatusBadge status={claim.status} />
                     </td>
-                    <td className="px-4 py-3 text-gray-900 font-medium">
+                    <td className="px-4 py-3 text-gray-200 font-medium">
                       {formatCurrency(claim.amount)}
                     </td>
-                    <td className="px-4 py-3 text-gray-500">{formatDate(claim.submittedAt)}</td>
-                    <td className="px-4 py-3 text-gray-500">{claim.policyholderName}</td>
+                    <td className="px-4 py-3 text-gray-400">{formatDate(claim.submittedAt)}</td>
+                    <td className="px-4 py-3 text-gray-400">{claim.policyholderName}</td>
                   </tr>
                 ))}
               </tbody>
@@ -162,7 +162,7 @@ export function ClaimsListPage() {
           </div>
 
           {/* Pagination */}
-          <div className="flex items-center justify-between px-4 py-3 border-t border-gray-200 bg-gray-50">
+          <div className="flex items-center justify-between px-4 py-3 border-t border-white/[0.06] bg-dark-700/30">
             <p className="text-sm text-gray-500">
               Showing {filteredClaims.length} of {MOCK_CLAIMS.length} claims
             </p>

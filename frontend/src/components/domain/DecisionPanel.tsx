@@ -39,19 +39,19 @@ export function DecisionPanel({ claimNumber, onDecision, className }: DecisionPa
   const decisionConfig = {
     approve: {
       title: 'Approve Claim',
-      icon: <CheckCircle className="h-5 w-5 text-green-500" />,
+      icon: <CheckCircle className="h-5 w-5 text-emerald-400" />,
       description: `Are you sure you want to approve claim ${claimNumber}?`,
       confirmVariant: 'primary' as const,
     },
     deny: {
       title: 'Deny Claim',
-      icon: <XCircle className="h-5 w-5 text-red-500" />,
+      icon: <XCircle className="h-5 w-5 text-red-400" />,
       description: `Are you sure you want to deny claim ${claimNumber}?`,
       confirmVariant: 'danger' as const,
     },
     flag: {
       title: 'Flag for Review',
-      icon: <AlertTriangle className="h-5 w-5 text-orange-500" />,
+      icon: <AlertTriangle className="h-5 w-5 text-amber-400" />,
       description: `Are you sure you want to flag claim ${claimNumber} for further review?`,
       confirmVariant: 'primary' as const,
     },
@@ -99,7 +99,7 @@ export function DecisionPanel({ claimNumber, onDecision, className }: DecisionPa
         <div className="space-y-4">
           <div className="flex items-center gap-3">
             {config?.icon}
-            <p className="text-sm text-gray-600">{config?.description}</p>
+            <p className="text-sm text-gray-400">{config?.description}</p>
           </div>
 
           <Textarea

@@ -42,7 +42,7 @@ export function DashboardPage() {
       {/* Page header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">
+          <h1 className="text-2xl font-bold text-white">
             Welcome back, {user?.firstName}
           </h1>
           <p className="text-sm text-gray-500 mt-1">
@@ -99,7 +99,7 @@ export function DashboardPage() {
               <CardTitle>Claims Overview</CardTitle>
               <Link
                 to="/analytics"
-                className="text-sm text-primary-600 hover:text-primary-700 font-medium inline-flex items-center gap-1"
+                className="text-sm text-primary-400 hover:text-primary-300 font-medium inline-flex items-center gap-1 transition-colors"
               >
                 View details <ArrowRight className="h-3.5 w-3.5" />
               </Link>
@@ -107,20 +107,24 @@ export function DashboardPage() {
             <div className="h-64">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={MOCK_CHART_DATA}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
-                  <XAxis dataKey="month" tick={{ fontSize: 12 }} stroke="#9ca3af" />
-                  <YAxis tick={{ fontSize: 12 }} stroke="#9ca3af" />
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
+                  <XAxis dataKey="month" tick={{ fontSize: 12 }} stroke="#6b7280" />
+                  <YAxis tick={{ fontSize: 12 }} stroke="#6b7280" />
                   <Tooltip
                     contentStyle={{
-                      borderRadius: '8px',
-                      border: '1px solid #e5e7eb',
-                      boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)',
+                      borderRadius: '12px',
+                      border: '1px solid rgba(255,255,255,0.1)',
+                      backgroundColor: 'rgba(31,41,55,0.95)',
+                      boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
+                      color: '#e5e7eb',
                     }}
+                    itemStyle={{ color: '#e5e7eb' }}
+                    labelStyle={{ color: '#9ca3af' }}
                   />
                   <Legend />
-                  <Bar dataKey="submitted" name="Submitted" fill="#818cf8" radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="approved" name="Approved" fill="#34d399" radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="denied" name="Denied" fill="#f87171" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="submitted" name="Submitted" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="approved" name="Approved" fill="#10b981" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="denied" name="Denied" fill="#ef4444" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -133,27 +137,27 @@ export function DashboardPage() {
             <CardTitle>Quick Summary</CardTitle>
           </CardHeader>
           <div className="space-y-4">
-            <div className="flex items-center justify-between py-2 border-b border-gray-100">
-              <span className="text-sm text-gray-500">Total Claims Value</span>
-              <span className="text-sm font-semibold text-gray-900">
+            <div className="flex items-center justify-between py-2 border-b border-white/[0.06]">
+              <span className="text-sm text-gray-400">Total Claims Value</span>
+              <span className="text-sm font-semibold text-gray-200">
                 {formatCurrency(stats.totalAmount)}
               </span>
             </div>
-            <div className="flex items-center justify-between py-2 border-b border-gray-100">
-              <span className="text-sm text-gray-500">Avg. Processing Time</span>
-              <span className="text-sm font-semibold text-gray-900">
+            <div className="flex items-center justify-between py-2 border-b border-white/[0.06]">
+              <span className="text-sm text-gray-400">Avg. Processing Time</span>
+              <span className="text-sm font-semibold text-gray-200">
                 {stats.averageProcessingTime} days
               </span>
             </div>
-            <div className="flex items-center justify-between py-2 border-b border-gray-100">
-              <span className="text-sm text-gray-500">Approval Rate</span>
-              <span className="text-sm font-semibold text-green-600">
+            <div className="flex items-center justify-between py-2 border-b border-white/[0.06]">
+              <span className="text-sm text-gray-400">Approval Rate</span>
+              <span className="text-sm font-semibold text-emerald-400">
                 {Math.round((stats.approvedClaims / stats.totalClaims) * 100)}%
               </span>
             </div>
             <div className="flex items-center justify-between py-2">
-              <span className="text-sm text-gray-500">Denial Rate</span>
-              <span className="text-sm font-semibold text-red-600">
+              <span className="text-sm text-gray-400">Denial Rate</span>
+              <span className="text-sm font-semibold text-red-400">
                 {Math.round((stats.deniedClaims / stats.totalClaims) * 100)}%
               </span>
             </div>
@@ -164,10 +168,10 @@ export function DashboardPage() {
       {/* Recent claims */}
       <div>
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-gray-900">Recent Claims</h2>
+          <h2 className="text-lg font-semibold text-white">Recent Claims</h2>
           <Link
             to="/claims"
-            className="text-sm text-primary-600 hover:text-primary-700 font-medium inline-flex items-center gap-1"
+            className="text-sm text-primary-400 hover:text-primary-300 font-medium inline-flex items-center gap-1 transition-colors"
           >
             View all <ArrowRight className="h-3.5 w-3.5" />
           </Link>

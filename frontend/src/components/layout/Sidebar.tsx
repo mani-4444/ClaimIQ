@@ -11,6 +11,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Shield,
+  Sparkles,
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -56,20 +57,23 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
   return (
     <aside
       className={cn(
-        'fixed left-0 top-0 z-40 h-screen bg-white border-r border-gray-200 transition-all duration-[var(--transition-slow)] flex flex-col',
+        'fixed left-0 top-0 z-40 h-screen bg-dark-800/95 backdrop-blur-xl border-r border-white/[0.06] transition-all duration-[var(--transition-slow)] flex flex-col',
         isCollapsed ? 'w-16' : 'w-64',
       )}
     >
       {/* Logo */}
-      <div className="flex items-center h-16 px-4 border-b border-gray-200 flex-shrink-0">
+      <div className="flex items-center h-16 px-4 border-b border-white/[0.06] flex-shrink-0">
         <div className="flex items-center gap-3">
-          <div className="flex items-center justify-center h-8 w-8 bg-primary-600 rounded-lg flex-shrink-0">
+          <div className="flex items-center justify-center h-9 w-9 bg-gradient-to-br from-primary-500 to-primary-700 rounded-xl flex-shrink-0 shadow-glow-blue">
             <Shield className="h-5 w-5 text-white" />
           </div>
           {!isCollapsed && (
-            <span className="text-lg font-bold text-gray-900 whitespace-nowrap">
-              ClaimIQ
-            </span>
+            <div className="flex items-center gap-1.5">
+              <span className="text-lg font-bold text-white whitespace-nowrap">
+                ClaimIQ
+              </span>
+              <Sparkles className="h-3.5 w-3.5 text-primary-400 animate-pulse-slow" />
+            </div>
           )}
         </div>
       </div>
@@ -87,10 +91,10 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
               key={item.href}
               to={item.href}
               className={cn(
-                'flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium transition-colors',
+                'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200',
                 isActive
-                  ? 'bg-primary-50 text-primary-700 border-l-3 border-primary-600'
-                  : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900',
+                  ? 'bg-primary-500/15 text-primary-400 border-l-3 border-primary-500 shadow-[inset_0_0_20px_rgba(59,130,246,0.06)]'
+                  : 'text-gray-400 hover:bg-white/[0.06] hover:text-gray-200',
                 isCollapsed && 'justify-center px-0',
               )}
               title={isCollapsed ? item.label : undefined}
@@ -102,11 +106,24 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
         })}
       </nav>
 
+      {/* AI Badge - only when expanded */}
+      {!isCollapsed && (
+        <div className="px-3 py-3 mx-3 mb-2 rounded-xl bg-gradient-to-br from-primary-500/10 to-primary-700/10 border border-primary-500/20">
+          <div className="flex items-center gap-2 mb-1">
+            <Sparkles className="h-4 w-4 text-primary-400" />
+            <span className="text-xs font-semibold text-primary-400">AI-Powered</span>
+          </div>
+          <p className="text-[11px] text-gray-500 leading-relaxed">
+            Intelligent claim analysis & fraud detection
+          </p>
+        </div>
+      )}
+
       {/* Collapse toggle */}
-      <div className="px-3 py-4 border-t border-gray-200 flex-shrink-0">
+      <div className="px-3 py-4 border-t border-white/[0.06] flex-shrink-0">
         <button
           onClick={onToggle}
-          className="flex items-center justify-center w-full px-3 py-2 rounded-md text-gray-500 hover:bg-gray-100 hover:text-gray-700 transition-colors"
+          className="flex items-center justify-center w-full px-3 py-2 rounded-lg text-gray-500 hover:bg-white/[0.06] hover:text-gray-300 transition-all"
           aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
         >
           {isCollapsed ? (

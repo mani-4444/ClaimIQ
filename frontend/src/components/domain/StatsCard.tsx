@@ -19,27 +19,30 @@ export function StatsCard({ title, value, trend, icon, className }: StatsCardPro
         : 'down';
 
   return (
-    <Card variant="default" padding="md" className={cn('relative', className)}>
-      <div className="flex items-start justify-between">
+    <Card variant="default" padding="md" className={cn('relative overflow-hidden group hover:border-primary-500/20', className)}>
+      {/* Subtle glow effect in corner */}
+      <div className="absolute -top-10 -right-10 w-24 h-24 bg-primary-500/5 rounded-full blur-2xl group-hover:bg-primary-500/10 transition-all duration-500" />
+
+      <div className="flex items-start justify-between relative">
         <div>
-          <p className="text-sm font-medium text-gray-500">{title}</p>
-          <p className="text-2xl font-bold text-gray-900 mt-1">{value}</p>
+          <p className="text-sm font-medium text-gray-400">{title}</p>
+          <p className="text-2xl font-bold text-white mt-1">{value}</p>
           {trend !== undefined && (
             <div className="flex items-center gap-1 mt-2">
               {trendDirection === 'up' && (
-                <TrendingUp className="h-4 w-4 text-green-500" />
+                <TrendingUp className="h-4 w-4 text-emerald-400" />
               )}
               {trendDirection === 'down' && (
-                <TrendingDown className="h-4 w-4 text-red-500" />
+                <TrendingDown className="h-4 w-4 text-red-400" />
               )}
               {trendDirection === 'neutral' && (
-                <Minus className="h-4 w-4 text-gray-400" />
+                <Minus className="h-4 w-4 text-gray-500" />
               )}
               <span
                 className={cn(
                   'text-xs font-medium',
-                  trendDirection === 'up' && 'text-green-600',
-                  trendDirection === 'down' && 'text-red-600',
+                  trendDirection === 'up' && 'text-emerald-400',
+                  trendDirection === 'down' && 'text-red-400',
                   trendDirection === 'neutral' && 'text-gray-500',
                 )}
               >
@@ -50,7 +53,7 @@ export function StatsCard({ title, value, trend, icon, className }: StatsCardPro
           )}
         </div>
         {icon && (
-          <div className="flex items-center justify-center h-10 w-10 rounded-lg bg-primary-50 text-primary-600">
+          <div className="flex items-center justify-center h-10 w-10 rounded-xl bg-primary-500/10 text-primary-400 border border-primary-500/20">
             {icon}
           </div>
         )}

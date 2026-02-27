@@ -47,13 +47,13 @@ export function TopBar({ onMenuToggle }: TopBarProps) {
   }, []);
 
   return (
-    <header className="sticky top-0 z-30 bg-white border-b border-gray-200">
+    <header className="sticky top-0 z-30 bg-dark-800/80 backdrop-blur-xl border-b border-white/[0.06]">
       <div className="flex items-center justify-between h-16 px-4 lg:px-6">
         {/* Left side */}
         <div className="flex items-center gap-4">
           <button
             onClick={onMenuToggle}
-            className="lg:hidden p-2 rounded-md text-gray-500 hover:bg-gray-100 transition-colors"
+            className="lg:hidden p-2 rounded-lg text-gray-400 hover:bg-white/[0.06] transition-colors"
             aria-label="Toggle navigation menu"
           >
             <Menu className="h-5 w-5" />
@@ -61,13 +61,13 @@ export function TopBar({ onMenuToggle }: TopBarProps) {
 
           {/* Search */}
           <div className="hidden sm:block relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
             <input
               type="search"
               placeholder="Search claims, policies..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9 pr-4 py-2 w-64 lg:w-80 text-sm border border-gray-300 rounded-md bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-200 focus:border-primary-500 transition-colors"
+              className="pl-9 pr-4 py-2 w-64 lg:w-80 text-sm border border-white/[0.08] rounded-lg bg-dark-700/50 text-gray-200 placeholder:text-gray-500 focus:bg-dark-700 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500/50 transition-all"
             />
           </div>
         </div>
@@ -78,25 +78,25 @@ export function TopBar({ onMenuToggle }: TopBarProps) {
           <div className="relative" ref={notifRef}>
             <button
               onClick={() => setShowNotifications(!showNotifications)}
-              className="relative p-2 rounded-md text-gray-500 hover:bg-gray-100 transition-colors"
+              className="relative p-2 rounded-lg text-gray-400 hover:bg-white/[0.06] transition-colors"
               aria-label={`Notifications${unreadCount > 0 ? `, ${unreadCount} unread` : ''}`}
             >
               <Bell className="h-5 w-5" />
               {unreadCount > 0 && (
-                <span className="absolute top-1.5 right-1.5 h-4 w-4 flex items-center justify-center bg-red-500 text-white text-[10px] font-bold rounded-full">
+                <span className="absolute top-1.5 right-1.5 h-4 w-4 flex items-center justify-center bg-red-500 text-white text-[10px] font-bold rounded-full animate-pulse-slow">
                   {unreadCount}
                 </span>
               )}
             </button>
 
             {showNotifications && (
-              <div className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-lg border border-gray-200 animate-fade-in">
-                <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
-                  <h3 className="text-sm font-semibold text-gray-900">Notifications</h3>
+              <div className="absolute right-0 mt-2 w-80 glass-surface rounded-xl animate-fade-in">
+                <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.06]">
+                  <h3 className="text-sm font-semibold text-gray-200">Notifications</h3>
                   {unreadCount > 0 && (
                     <button
                       onClick={markAllAsRead}
-                      className="text-xs text-primary-600 hover:text-primary-700 font-medium"
+                      className="text-xs text-primary-400 hover:text-primary-300 font-medium"
                     >
                       Mark all as read
                     </button>
@@ -117,18 +117,18 @@ export function TopBar({ onMenuToggle }: TopBarProps) {
                           setShowNotifications(false);
                         }}
                         className={cn(
-                          'block px-4 py-3 hover:bg-gray-50 transition-colors border-b border-gray-50 last:border-0',
-                          !notif.read && 'bg-primary-50/50',
+                          'block px-4 py-3 hover:bg-white/[0.04] transition-colors border-b border-white/[0.04] last:border-0',
+                          !notif.read && 'bg-primary-500/5',
                         )}
                       >
                         <div className="flex items-start gap-2">
                           {!notif.read && (
-                            <span className="mt-1.5 h-2 w-2 rounded-full bg-primary-600 flex-shrink-0" />
+                            <span className="mt-1.5 h-2 w-2 rounded-full bg-primary-500 flex-shrink-0" />
                           )}
                           <div className={cn(!notif.read ? '' : 'ml-4')}>
-                            <p className="text-sm font-medium text-gray-900">{notif.title}</p>
+                            <p className="text-sm font-medium text-gray-200">{notif.title}</p>
                             <p className="text-xs text-gray-500 mt-0.5">{notif.message}</p>
-                            <p className="text-xs text-gray-400 mt-1">
+                            <p className="text-xs text-gray-600 mt-1">
                               {formatRelativeTime(notif.createdAt)}
                             </p>
                           </div>
@@ -145,7 +145,7 @@ export function TopBar({ onMenuToggle }: TopBarProps) {
           <div className="relative" ref={userMenuRef}>
             <button
               onClick={() => setShowUserMenu(!showUserMenu)}
-              className="flex items-center gap-2 p-1.5 rounded-md hover:bg-gray-100 transition-colors"
+              className="flex items-center gap-2 p-1.5 rounded-lg hover:bg-white/[0.06] transition-colors"
               aria-label="User menu"
             >
               <Avatar
@@ -154,20 +154,20 @@ export function TopBar({ onMenuToggle }: TopBarProps) {
                 size="sm"
               />
               <div className="hidden md:block text-left">
-                <p className="text-sm font-medium text-gray-700 leading-none">
+                <p className="text-sm font-medium text-gray-200 leading-none">
                   {user?.firstName} {user?.lastName}
                 </p>
                 <p className="text-xs text-gray-500 capitalize">{user?.role}</p>
               </div>
-              <ChevronDown className="h-4 w-4 text-gray-400 hidden md:block" />
+              <ChevronDown className="h-4 w-4 text-gray-500 hidden md:block" />
             </button>
 
             {showUserMenu && (
-              <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 animate-fade-in">
+              <div className="absolute right-0 mt-2 w-48 glass-surface rounded-xl py-1 animate-fade-in">
                 <Link
                   to="/settings"
                   onClick={() => setShowUserMenu(false)}
-                  className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                  className="flex items-center gap-2 px-4 py-2 text-sm text-gray-300 hover:bg-white/[0.06] transition-colors"
                 >
                   <User className="h-4 w-4" />
                   Profile
@@ -175,18 +175,18 @@ export function TopBar({ onMenuToggle }: TopBarProps) {
                 <Link
                   to="/settings"
                   onClick={() => setShowUserMenu(false)}
-                  className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                  className="flex items-center gap-2 px-4 py-2 text-sm text-gray-300 hover:bg-white/[0.06] transition-colors"
                 >
                   <Settings className="h-4 w-4" />
                   Settings
                 </Link>
-                <hr className="my-1 border-gray-100" />
+                <hr className="my-1 border-white/[0.06]" />
                 <button
                   onClick={() => {
                     setShowUserMenu(false);
                     logout();
                   }}
-                  className="flex items-center gap-2 w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                  className="flex items-center gap-2 w-full px-4 py-2 text-sm text-red-400 hover:bg-red-500/10 transition-colors"
                 >
                   <LogOut className="h-4 w-4" />
                   Sign out

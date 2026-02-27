@@ -10,9 +10,9 @@ interface CardProps {
 }
 
 const variantClasses: Record<CardVariant, string> = {
-  default: 'bg-white shadow-sm border border-gray-200',
-  elevated: 'bg-white shadow-md',
-  outlined: 'bg-white border border-gray-200',
+  default: 'glass-card rounded-xl',
+  elevated: 'glass-card rounded-xl shadow-card-hover',
+  outlined: 'bg-dark-700/50 border border-white/[0.06] rounded-xl',
 };
 
 const paddingClasses = {
@@ -31,7 +31,7 @@ export function Card({
   return (
     <div
       className={cn(
-        'rounded-lg',
+        'transition-all duration-200',
         variantClasses[variant],
         paddingClasses[padding],
         className,
@@ -63,5 +63,5 @@ export function CardTitle({
   className?: string;
   children: React.ReactNode;
 }) {
-  return <h3 className={cn('text-lg font-semibold text-gray-900', className)}>{children}</h3>;
+  return <h3 className={cn('text-lg font-semibold text-white', className)}>{children}</h3>;
 }

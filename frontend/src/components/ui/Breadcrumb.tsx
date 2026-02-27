@@ -19,7 +19,7 @@ export function Breadcrumb({ items, className }: BreadcrumbProps) {
         <li>
           <Link
             to="/dashboard"
-            className="text-gray-400 hover:text-gray-600 transition-colors"
+            className="text-gray-500 hover:text-gray-300 transition-colors"
             aria-label="Home"
           >
             <Home className="h-4 w-4" />
@@ -29,12 +29,12 @@ export function Breadcrumb({ items, className }: BreadcrumbProps) {
           const isLast = index === items.length - 1;
           return (
             <li key={item.label} className="flex items-center gap-1.5">
-              <ChevronRight className="h-4 w-4 text-gray-300 flex-shrink-0" />
+              <ChevronRight className="h-4 w-4 text-gray-600 flex-shrink-0" />
               {isLast || !item.href ? (
                 <span
                   className={cn(
                     'font-medium',
-                    isLast ? 'text-gray-900' : 'text-gray-500',
+                    isLast ? 'text-gray-200' : 'text-gray-500',
                   )}
                   aria-current={isLast ? 'page' : undefined}
                 >
@@ -43,7 +43,7 @@ export function Breadcrumb({ items, className }: BreadcrumbProps) {
               ) : (
                 <Link
                   to={item.href}
-                  className="text-gray-500 hover:text-gray-700 transition-colors"
+                  className="text-gray-500 hover:text-gray-300 transition-colors"
                 >
                   {item.label}
                 </Link>

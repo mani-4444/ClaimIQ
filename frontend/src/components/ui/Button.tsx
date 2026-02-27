@@ -15,15 +15,15 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
 
 const variantClasses: Record<ButtonVariant, string> = {
   primary:
-    'bg-primary-600 text-white hover:bg-primary-700 active:bg-primary-800 focus-visible:ring-primary-400',
+    'btn-gradient text-white focus-visible:ring-primary-400',
   secondary:
-    'bg-gray-100 text-gray-700 hover:bg-gray-200 active:bg-gray-300 focus-visible:ring-gray-400',
+    'bg-dark-600 text-gray-200 hover:bg-dark-500 active:bg-dark-400 border border-white/[0.06] focus-visible:ring-gray-400',
   ghost:
-    'bg-transparent text-gray-600 hover:bg-gray-100 active:bg-gray-200 focus-visible:ring-gray-400',
+    'bg-transparent text-gray-300 hover:bg-white/[0.06] active:bg-white/[0.1] focus-visible:ring-gray-400',
   danger:
-    'bg-red-600 text-white hover:bg-red-700 active:bg-red-800 focus-visible:ring-red-400',
+    'bg-red-600/90 text-white hover:bg-red-600 active:bg-red-700 shadow-glow-red focus-visible:ring-red-400',
   outline:
-    'border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 active:bg-gray-100 focus-visible:ring-primary-400',
+    'border border-white/[0.1] bg-transparent text-gray-300 hover:bg-white/[0.06] active:bg-white/[0.1] focus-visible:ring-primary-400',
 };
 
 const sizeClasses: Record<ButtonSize, string> = {
@@ -53,8 +53,8 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       <button
         ref={ref}
         className={cn(
-          'inline-flex items-center justify-center gap-2 rounded-md font-medium transition-all duration-[var(--transition-fast)]',
-          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2',
+          'inline-flex items-center justify-center gap-2 rounded-lg font-medium transition-all duration-[var(--transition-fast)]',
+          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-dark-900',
           'disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:transform-none',
           'active:scale-[0.98]',
           variantClasses[variant],

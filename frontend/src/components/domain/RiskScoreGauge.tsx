@@ -6,10 +6,10 @@ interface RiskScoreGaugeProps {
 }
 
 function getScoreColor(score: number): string {
-  if (score < 30) return 'text-green-500';
-  if (score < 60) return 'text-yellow-500';
-  if (score < 80) return 'text-orange-500';
-  return 'text-red-500';
+  if (score < 30) return 'text-emerald-400';
+  if (score < 60) return 'text-amber-400';
+  if (score < 80) return 'text-orange-400';
+  return 'text-red-400';
 }
 
 function getScoreLabel(score: number): string {
@@ -20,10 +20,17 @@ function getScoreLabel(score: number): string {
 }
 
 function getStrokeColor(score: number): string {
-  if (score < 30) return '#22c55e';
-  if (score < 60) return '#eab308';
+  if (score < 30) return '#10b981';
+  if (score < 60) return '#f59e0b';
   if (score < 80) return '#f97316';
   return '#ef4444';
+}
+
+function getGlowFilter(score: number): string {
+  if (score < 30) return 'drop-shadow(0 0 6px rgba(16, 185, 129, 0.5))';
+  if (score < 60) return 'drop-shadow(0 0 6px rgba(245, 158, 11, 0.5))';
+  if (score < 80) return 'drop-shadow(0 0 6px rgba(249, 115, 22, 0.5))';
+  return 'drop-shadow(0 0 6px rgba(239, 68, 68, 0.5))';
 }
 
 export function RiskScoreGauge({ score, className }: RiskScoreGaugeProps) {
@@ -41,14 +48,18 @@ export function RiskScoreGauge({ score, className }: RiskScoreGaugeProps) {
       aria-label={`Fraud risk score: ${clampedScore} out of 100 - ${getScoreLabel(clampedScore)}`}
     >
       <div className="relative h-32 w-32">
-        <svg viewBox="0 0 100 100" className="transform -rotate-90 h-full w-full">
+        <svg
+          viewBox="0 0 100 100"
+          className="transform -rotate-90 h-full w-full"
+          style={{ filter: getGlowFilter(clampedScore) }}
+        >
           {/* Background circle */}
           <circle
             cx="50"
             cy="50"
             r="45"
             fill="none"
-            stroke="#e5e7eb"
+            stroke="rgba(255,255,255,0.06)"
             strokeWidth="8"
           />
           {/* Score arc */}
@@ -62,11 +73,11 @@ export function RiskScoreGauge({ score, className }: RiskScoreGaugeProps) {
             strokeLinecap="round"
             strokeDasharray={circumference}
             strokeDashoffset={strokeDashoffset}
-            className="transition-all duration-700 ease-out"
+            className="transition-all duration-1000 ease-out"
           />
         </svg>
         <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span className={cn('text-2xl font-bold', getScoreColor(clampedScore))}>
+          <span className={cn('text-3xl font-bold', getScoreColor(clampedScore))}>
             {clampedScore}
           </span>
           <span className="text-[10px] text-gray-500 font-medium">/ 100</span>

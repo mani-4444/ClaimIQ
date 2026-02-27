@@ -56,7 +56,7 @@ export function Modal({
   return (
     <div
       ref={overlayRef}
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 animate-fade-in"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-fade-in"
       onClick={(e) => {
         if (e.target === overlayRef.current && closable) onClose();
       }}
@@ -68,23 +68,23 @@ export function Modal({
         ref={contentRef}
         tabIndex={-1}
         className={cn(
-          'relative w-full mx-4 bg-white rounded-lg shadow-xl animate-slide-up',
+          'relative w-full mx-4 glass-surface rounded-2xl animate-slide-up',
           'max-h-[90vh] overflow-y-auto',
           'md:mx-0',
           sizeClasses[size],
         )}
       >
         {(title || closable) && (
-          <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
+          <div className="flex items-center justify-between px-6 py-4 border-b border-white/[0.06]">
             {title && (
-              <h2 id="modal-title" className="text-lg font-semibold text-gray-900">
+              <h2 id="modal-title" className="text-lg font-semibold text-white">
                 {title}
               </h2>
             )}
             {closable && (
               <button
                 onClick={onClose}
-                className="p-1 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
+                className="p-1 rounded-lg text-gray-400 hover:text-gray-200 hover:bg-white/[0.06] transition-colors"
                 aria-label="Close dialog"
               >
                 <X className="h-5 w-5" />

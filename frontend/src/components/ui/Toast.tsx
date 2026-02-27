@@ -17,19 +17,19 @@ const variantConfig: Record<
   { icon: React.ReactNode; containerClass: string }
 > = {
   success: {
-    icon: <CheckCircle className="h-5 w-5 text-green-500" />,
-    containerClass: 'border-l-4 border-l-green-500',
+    icon: <CheckCircle className="h-5 w-5 text-emerald-400" />,
+    containerClass: 'border-l-4 border-l-emerald-500',
   },
   error: {
-    icon: <AlertCircle className="h-5 w-5 text-red-500" />,
+    icon: <AlertCircle className="h-5 w-5 text-red-400" />,
     containerClass: 'border-l-4 border-l-red-500',
   },
   warning: {
-    icon: <AlertTriangle className="h-5 w-5 text-yellow-500" />,
-    containerClass: 'border-l-4 border-l-yellow-500',
+    icon: <AlertTriangle className="h-5 w-5 text-amber-400" />,
+    containerClass: 'border-l-4 border-l-amber-500',
   },
   info: {
-    icon: <Info className="h-5 w-5 text-blue-500" />,
+    icon: <Info className="h-5 w-5 text-blue-400" />,
     containerClass: 'border-l-4 border-l-blue-500',
   },
 };
@@ -58,7 +58,7 @@ export function Toast({
       role="status"
       aria-live="polite"
       className={cn(
-        'flex items-start gap-3 bg-white rounded-lg shadow-lg p-4 min-w-[320px] max-w-md',
+        'flex items-start gap-3 glass-surface rounded-xl p-4 min-w-[320px] max-w-md',
         'transition-all duration-200',
         config.containerClass,
         isVisible ? 'animate-slide-in opacity-100' : 'opacity-0 translate-x-2',
@@ -66,15 +66,15 @@ export function Toast({
     >
       <div className="flex-shrink-0 mt-0.5">{config.icon}</div>
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium text-gray-900">{title}</p>
-        {message && <p className="text-sm text-gray-500 mt-0.5">{message}</p>}
+        <p className="text-sm font-medium text-gray-200">{title}</p>
+        {message && <p className="text-sm text-gray-400 mt-0.5">{message}</p>}
       </div>
       <button
         onClick={() => {
           setIsVisible(false);
           setTimeout(onClose, 200);
         }}
-        className="flex-shrink-0 p-1 rounded-md text-gray-400 hover:text-gray-600 transition-colors"
+        className="flex-shrink-0 p-1 rounded-md text-gray-500 hover:text-gray-300 transition-colors"
         aria-label="Dismiss notification"
       >
         <X className="h-4 w-4" />

@@ -71,13 +71,13 @@ export function FilterBar({ onFilterChange, className }: FilterBarProps) {
       <div className="flex flex-wrap items-center gap-3">
         {/* Search */}
         <div className="relative flex-1 min-w-[200px]">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
           <input
             type="search"
             placeholder="Search claims..."
             value={filters.search}
             onChange={(e) => updateFilter('search', e.target.value)}
-            className="w-full pl-9 pr-4 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-200 focus:border-primary-500 transition-colors"
+            className="w-full pl-9 pr-4 py-2 text-sm border border-white/[0.08] rounded-lg bg-dark-700/50 text-gray-200 placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500/50 transition-all"
           />
         </div>
 
@@ -122,7 +122,7 @@ export function FilterBar({ onFilterChange, className }: FilterBarProps) {
 
       {/* Advanced filters panel */}
       {showAdvanced && (
-        <div className="bg-gray-50 rounded-lg p-4 border border-gray-200 animate-slide-up">
+        <div className="glass-card rounded-xl p-4 animate-slide-up">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {/* Mobile: show status and type here too */}
             <div className="md:hidden">

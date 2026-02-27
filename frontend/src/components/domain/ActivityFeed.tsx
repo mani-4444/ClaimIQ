@@ -24,13 +24,13 @@ export function ActivityFeed({ notes, className }: ActivityFeedProps) {
           <Avatar name={note.author} size="sm" />
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-0.5">
-              <span className="text-sm font-medium text-gray-900">{note.author}</span>
-              <span className="text-xs text-gray-400 capitalize">({note.authorRole})</span>
-              <span className="text-xs text-gray-400">
+              <span className="text-sm font-medium text-gray-200">{note.author}</span>
+              <span className="text-xs text-gray-600 capitalize">({note.authorRole})</span>
+              <span className="text-xs text-gray-600">
                 {formatRelativeTime(note.createdAt)}
               </span>
             </div>
-            <p className="text-sm text-gray-600">{note.content}</p>
+            <p className="text-sm text-gray-400">{note.content}</p>
           </div>
         </div>
       ))}
