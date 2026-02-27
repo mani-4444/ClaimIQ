@@ -1,13 +1,15 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Breadcrumb } from "../../components/ui/Breadcrumb";
 import { Button } from "../../components/ui/Button";
 import { Input } from "../../components/ui/Input";
 import { Textarea } from "../../components/ui/Textarea";
+import { Select } from "../../components/ui/Select";
 import { Stepper } from "../../components/ui/Stepper";
 import { Card } from "../../components/ui/Card";
 import { FileUpload } from "../../components/ui/FileUpload";
 import { useClaimsStore } from "../../store/claimsStore";
+import { apiGetVehicleOptions } from "../../lib/api";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -17,6 +19,8 @@ const claimSchema = z.object({
   policyNumber: z
     .string()
     .min(5, "Policy number must be at least 5 characters"),
+  vehicleCompany: z.string().min(1, "Please select vehicle company"),
+  vehicleModel: z.string().min(1, "Please select vehicle model"),
   description: z.string().optional(),
   incidentDate: z.string().optional(),
   location: z.string().optional(),
@@ -37,6 +41,13 @@ export function NewClaimPage() {
   const [files, setFiles] = useState<File[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [companyOptions, setCompanyOptions] = useState<
+    { value: string; label: string }[]
+  >([]);
+  const [modelsByCompany, setModelsByCompany] = useState<
+    Record<string, string[]>
+  >({});
+  const [optionsLoading, setOptionsLoading] = useState(true);
 
   const {
     register,
@@ -48,6 +59,8 @@ export function NewClaimPage() {
     resolver: zodResolver(claimSchema),
     defaultValues: {
       policyNumber: "",
+      vehicleCompany: "",
+      vehicleModel: "",
       description: "",
       incidentDate: "",
       location: "",
@@ -55,11 +68,38 @@ export function NewClaimPage() {
   });
 
   const formValues = watch();
+  const selectedCompany = watch("vehicleCompany");
+  const modelOptions = ((modelsByCompany[selectedCompany] || []) as string[]).map((model) => ({
+    value: model,
+    label: model,
+  }));
+
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const data = await apiGetVehicleOptions();
+        if (!mounted) return;
+        setCompanyOptions(
+          data.companies.map((company) => ({ value: company, label: company })),
+        );
+        setModelsByCompany(data.models_by_company || {});
+      } catch {
+        if (!mounted) return;
+        setSubmitError("Failed to load vehicle options. Please refresh.");
+      } finally {
+        if (mounted) setOptionsLoading(false);
+      }
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   const handleNext = async () => {
     let valid = false;
     if (currentStep === 0) {
-      valid = await trigger(["policyNumber"]);
+      valid = await trigger(["policyNumber", "vehicleCompany", "vehicleModel"]);
     } else if (currentStep === 1) {
       valid = files.length > 0;
       if (!valid) setSubmitError("Please upload at least one damage photo");
@@ -88,6 +128,8 @@ export function NewClaimPage() {
       const claim = await createClaim(
         files,
         data.policyNumber,
+        data.vehicleCompany,
+        data.vehicleModel,
         data.description || undefined,
         data.incidentDate || undefined,
         data.location || undefined,
@@ -135,6 +177,32 @@ export function NewClaimPage() {
                 required
                 {...register("policyNumber")}
               />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <Select
+                  label="Vehicle Company"
+                  options={companyOptions}
+                  placeholder="Select company"
+                  error={errors.vehicleCompany?.message}
+                  required
+                  defaultValue=""
+                  disabled={optionsLoading}
+                  {...register("vehicleCompany")}
+                />
+                <Select
+                  label="Vehicle Model"
+                  options={modelOptions}
+                  placeholder={
+                    selectedCompany
+                      ? "Select model"
+                      : "Select company first"
+                  }
+                  error={errors.vehicleModel?.message}
+                  required
+                  defaultValue=""
+                  disabled={optionsLoading || !selectedCompany || modelOptions.length === 0}
+                  {...register("vehicleModel")}
+                />
+              </div>
               <Textarea
                 label="Description (optional)"
                 placeholder="Describe what happened — e.g. rear-ended at traffic light..."
@@ -199,6 +267,12 @@ export function NewClaimPage() {
                     <p className="text-gray-500">Incident Date</p>
                     <p className="font-medium text-gray-200">
                       {formValues.incidentDate || "—"}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-gray-500">Vehicle</p>
+                    <p className="font-medium text-gray-200">
+                      {formValues.vehicleCompany} {formValues.vehicleModel}
                     </p>
                   </div>
                   {formValues.description && (

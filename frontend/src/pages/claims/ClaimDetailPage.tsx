@@ -8,7 +8,7 @@ import { Badge } from "../../components/ui/Badge";
 import { EmptyState } from "../../components/ui/EmptyState";
 import { Skeleton } from "../../components/ui/Skeleton";
 import { RiskScoreGauge } from "../../components/domain/RiskScoreGauge";
-import { CLAIM_STATUS_MAP, DECISION_MAP, SEVERITY_MAP } from "../../constants";
+import { CLAIM_STATUS_MAP, DECISION_MAP } from "../../constants";
 import { formatCurrency, formatDate } from "../../lib/utils";
 import { apiDownloadReport } from "../../lib/api";
 import type { ClaimDecision } from "../../types";
@@ -19,7 +19,6 @@ import {
   Hash,
   AlertTriangle,
   Zap,
-  MapPin,
   Loader2,
   Image as ImageIcon,
 } from "lucide-react";
@@ -89,6 +88,23 @@ export function ClaimDetailPage() {
   const decisionInfo = claim.decision
     ? DECISION_MAP[claim.decision as ClaimDecision]
     : null;
+  const severityScore = claim.damage_severity_score;
+  const severityLabel =
+    severityScore == null
+      ? "Unknown"
+      : severityScore >= 75
+        ? "Severe"
+        : severityScore >= 45
+          ? "Moderate"
+          : "Minor";
+  const severityColor =
+    severityScore == null
+      ? "text-gray-400"
+      : severityScore >= 75
+        ? "text-red-400"
+        : severityScore >= 45
+          ? "text-amber-400"
+          : "text-emerald-400";
 
   const handleDownloadReport = async () => {
     if (!id) return;
@@ -176,7 +192,7 @@ export function ClaimDetailPage() {
                 AI Analysis in Progress
               </p>
               <p className="text-xs text-gray-500">
-                Detecting damage zones, estimating costs, and checking for
+                Assessing damage severity, estimating costs, and checking for
                 fraud...
               </p>
             </div>
@@ -202,6 +218,19 @@ export function ClaimDetailPage() {
                   </p>
                 </div>
               </div>
+              {(claim.vehicle_company || claim.vehicle_model) && (
+                <div className="flex items-center gap-2">
+                  <Hash className="h-4 w-4 text-gray-500" />
+                  <div>
+                    <p className="text-xs text-gray-500">Vehicle</p>
+                    <p className="text-sm font-medium text-gray-200">
+                      {[claim.vehicle_company, claim.vehicle_model]
+                        .filter(Boolean)
+                        .join(" ")}
+                    </p>
+                  </div>
+                </div>
+              )}
               {claim.cost_total != null && (
                 <div className="flex items-center gap-2">
                   <DollarSign className="h-4 w-4 text-gray-500" />
@@ -247,8 +276,8 @@ export function ClaimDetailPage() {
                 },
                 {
                   key: "damage" as const,
-                  label: "Damage Zones",
-                  count: claim.damage_zones?.length || 0,
+                  label: "Severity Score",
+                  count: severityScore != null ? 1 : 0,
                 },
                 {
                   key: "costs" as const,
@@ -304,53 +333,34 @@ export function ClaimDetailPage() {
                 </div>
               )}
 
-              {/* Damage zones tab */}
+              {/* Damage severity tab */}
               {activeTab === "damage" && (
                 <div>
-                  {!claim.damage_zones || claim.damage_zones.length === 0 ? (
+                  {severityScore == null ? (
                     <EmptyState
-                      icon={<MapPin className="h-10 w-10" />}
-                      title="No damage detected"
+                      icon={<AlertTriangle className="h-10 w-10" />}
+                      title="No severity score available"
                       description={
                         claim.status === "uploaded"
-                          ? "Run AI Analysis to detect damage zones."
+                          ? "Submit and process claim to generate severity score."
                           : undefined
                       }
                     />
                   ) : (
-                    <div className="space-y-3">
-                      {claim.damage_zones.map((zone, i) => {
-                        const sev = SEVERITY_MAP[zone.severity] || {
-                          label: zone.severity,
-                          color: "text-gray-400",
-                        };
-                        return (
+                    <div className="space-y-4">
+                      <div className="rounded-lg border border-white/[0.06] bg-dark-700/50 p-4">
+                        <p className="text-xs text-gray-500 mb-1">Damage Severity Score</p>
+                        <div className="flex items-end justify-between">
+                          <p className="text-3xl font-bold text-white">{severityScore}/100</p>
+                          <p className={`text-sm font-medium ${severityColor}`}>{severityLabel}</p>
+                        </div>
+                        <div className="mt-3 h-2 rounded-full bg-dark-600 overflow-hidden">
                           <div
-                            key={i}
-                            className="flex items-center justify-between p-3 bg-dark-700/50 rounded-lg border border-white/[0.04]"
-                          >
-                            <div className="flex items-center gap-3">
-                              <MapPin className="h-5 w-5 text-primary-400" />
-                              <div>
-                                <p className="text-sm font-medium text-gray-200">
-                                  {zone.zone}
-                                </p>
-                                <p className={`text-xs ${sev.color}`}>
-                                  {sev.label} damage
-                                </p>
-                              </div>
-                            </div>
-                            <div className="text-right">
-                              <p className="text-sm font-medium text-gray-200">
-                                {Math.round(zone.confidence * 100)}%
-                              </p>
-                              <p className="text-xs text-gray-500">
-                                confidence
-                              </p>
-                            </div>
-                          </div>
-                        );
-                      })}
+                            className="h-full bg-primary-500"
+                            style={{ width: `${Math.max(0, Math.min(100, severityScore))}%` }}
+                          />
+                        </div>
+                      </div>
                     </div>
                   )}
                 </div>
@@ -376,16 +386,16 @@ export function ClaimDetailPage() {
                         <thead>
                           <tr className="border-b border-white/[0.06]">
                             <th className="text-left py-2 text-gray-400 font-medium">
-                              Zone
+                              Damage Type
                             </th>
                             <th className="text-left py-2 text-gray-400 font-medium">
                               Severity
                             </th>
                             <th className="text-right py-2 text-gray-400 font-medium">
-                              Parts
+                              Qty
                             </th>
                             <th className="text-right py-2 text-gray-400 font-medium">
-                              Labor
+                              Unit Cost
                             </th>
                             <th className="text-right py-2 text-gray-400 font-medium">
                               Total
@@ -399,16 +409,16 @@ export function ClaimDetailPage() {
                               className="border-b border-white/[0.04]"
                             >
                               <td className="py-2 text-gray-200">
-                                {item.zone}
+                                {item.damage_type || "unknown"}
                               </td>
                               <td className="py-2 capitalize text-gray-400">
                                 {item.severity}
                               </td>
                               <td className="py-2 text-right text-gray-200">
-                                {formatCurrency(item.base_cost)}
+                                {item.quantity ?? 1}
                               </td>
                               <td className="py-2 text-right text-gray-200">
-                                {formatCurrency(item.labor_cost)}
+                                {formatCurrency(item.unit_repair_cost ?? item.base_cost)}
                               </td>
                               <td className="py-2 text-right font-medium text-gray-200">
                                 {formatCurrency(item.total)}

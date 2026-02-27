@@ -30,7 +30,33 @@ class ClaimService:
         self.vision_llm_service = vision_llm_service
         self.claim_repo = claim_repo
 
-    async def process_claim(self, claim_id: str, user_id: str) -> ClaimProcessResponse:
+    @staticmethod
+    def _compute_damage_severity_score(damage_zones: List[dict]) -> int | None:
+        if not damage_zones:
+            return None
+
+        severity_weight = {"minor": 0.35, "moderate": 0.65, "severe": 1.0}
+        weighted_scores: list[float] = []
+
+        for zone in damage_zones:
+            confidence = float(zone.get("confidence", 0.0) or 0.0)
+            severity = str(zone.get("severity", "moderate")).lower()
+            weight = severity_weight.get(severity, 0.65)
+            weighted_scores.append(max(0.0, min(1.0, confidence * weight)))
+
+        if not weighted_scores:
+            return None
+
+        avg = sum(weighted_scores) / len(weighted_scores)
+        return max(0, min(100, round(avg * 100)))
+
+    async def process_claim(
+        self,
+        claim_id: str,
+        user_id: str,
+        vehicle_company: str | None = None,
+        vehicle_model: str | None = None,
+    ) -> ClaimProcessResponse:
         """
         Full claim processing pipeline:
         1. Damage Detection (YOLO) — identify zones + severity
@@ -55,6 +81,8 @@ class ClaimService:
                 raise ValueError(f"Claim {claim_id} has already been processed")
 
             image_urls = claim["image_urls"]
+            effective_vehicle_company = vehicle_company or claim.get("vehicle_company")
+            effective_vehicle_model = vehicle_model or claim.get("vehicle_model")
 
             # 2. Damage Detection
             logger.info(f"[{claim_id[:8]}] Running damage detection...")
@@ -100,7 +128,9 @@ class ClaimService:
             # 4. Cost Estimation
             logger.info(f"[{claim_id[:8]}] Calculating costs...")
             cost_breakdown, cost_total = await self.cost_service.estimate_cost(
-                damage_zones
+                damage_zones,
+                vehicle_company=effective_vehicle_company,
+                vehicle_model=effective_vehicle_model,
             )
 
             # 5. Fraud Detection
@@ -146,6 +176,7 @@ class ClaimService:
             # Build response
             cost_breakdown_dicts = [c.model_dump() for c in cost_breakdown]
             damage_zone_dicts = [d.model_dump() for d in damage_zones]
+            damage_severity_score = self._compute_damage_severity_score(damage_zone_dicts)
 
             return ClaimProcessResponse(
                 id=claim_id,
@@ -153,8 +184,11 @@ class ClaimService:
                 image_urls=processed_image_urls,
                 user_description=claim.get("user_description"),
                 policy_number=claim["policy_number"],
+                vehicle_company=effective_vehicle_company,
+                vehicle_model=effective_vehicle_model,
                 status="processed",
                 damage_zones=damage_zone_dicts,
+                damage_severity_score=damage_severity_score,
                 ai_explanation=ai_explanation,
                 cost_breakdown=cost_breakdown_dicts,
                 cost_total=cost_total,

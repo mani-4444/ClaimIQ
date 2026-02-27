@@ -8,6 +8,7 @@ const API_BASE = "/api/v1";
 // ---------- token helpers ----------
 let accessToken: string | null = null;
 let refreshToken: string | null = null;
+let refreshInFlight: Promise<boolean> | null = null;
 
 export function setTokens(access: string, refresh: string) {
   accessToken = access;
@@ -33,6 +34,11 @@ export function getAccessToken() {
   return accessToken;
 }
 
+function getRefreshToken() {
+  if (!refreshToken) loadTokens();
+  return refreshToken;
+}
+
 // ---------- generic fetch wrapper ----------
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   const url = `${API_BASE}${path}`;
@@ -52,7 +58,7 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
 
   const res = await fetch(url, { ...options, headers });
 
-  if (res.status === 401 && refreshToken) {
+  if (res.status === 401 && getRefreshToken()) {
     // Try to refresh
     const refreshed = await refreshAccessToken();
     if (refreshed) {
@@ -130,19 +136,32 @@ export async function apiLogin(
 }
 
 async function refreshAccessToken(): Promise<boolean> {
+  if (refreshInFlight) return refreshInFlight;
+
+  refreshInFlight = (async () => {
+    const currentRefreshToken = getRefreshToken();
+    if (!currentRefreshToken) return false;
+
+    try {
+      const res = await fetch(`${API_BASE}/auth/refresh`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ refresh_token: currentRefreshToken }),
+      });
+      if (!res.ok) return false;
+      const data = await res.json();
+      accessToken = data.access_token;
+      localStorage.setItem("claimiq_access_token", data.access_token);
+      return true;
+    } catch {
+      return false;
+    }
+  })();
+
   try {
-    const res = await fetch(`${API_BASE}/auth/refresh`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ refresh_token: refreshToken }),
-    });
-    if (!res.ok) return false;
-    const data = await res.json();
-    accessToken = data.access_token;
-    localStorage.setItem("claimiq_access_token", data.access_token);
-    return true;
-  } catch {
-    return false;
+    return await refreshInFlight;
+  } finally {
+    refreshInFlight = null;
   }
 }
 
@@ -154,13 +173,17 @@ export async function apiGetProfile(): Promise<UserProfile> {
 export interface DamageZone {
   zone: string;
   severity: string;
+  damage_type?: string;
   confidence: number;
   bounding_box: number[];
 }
 
 export interface CostBreakdown {
   zone: string;
+  damage_type?: string;
   severity: string;
+  quantity?: number;
+  unit_repair_cost?: number;
   base_cost: number;
   labor_cost: number;
   regional_multiplier: number;
@@ -173,8 +196,11 @@ export interface ClaimResponse {
   image_urls: string[];
   user_description?: string;
   policy_number: string;
+  vehicle_company?: string;
+  vehicle_model?: string;
   status: string; // uploaded | processing | processed | error
   damage_zones?: DamageZone[];
+  damage_severity_score?: number;
   ai_explanation?: string;
   cost_breakdown?: CostBreakdown[];
   cost_total?: number;
@@ -191,9 +217,16 @@ export interface ClaimProcessResponse extends ClaimResponse {
   processing_time_ms: number;
 }
 
+export interface VehicleOptionsResponse {
+  companies: string[];
+  models_by_company: Record<string, string[]>;
+}
+
 export async function apiCreateClaim(
   images: File[],
   policyNumber: string,
+  vehicleCompany?: string,
+  vehicleModel?: string,
   description?: string,
   incidentDate?: string,
   location?: string,
@@ -201,6 +234,8 @@ export async function apiCreateClaim(
   const formData = new FormData();
   images.forEach((img) => formData.append("images", img));
   formData.append("policy_number", policyNumber);
+  if (vehicleCompany) formData.append("vehicle_company", vehicleCompany);
+  if (vehicleModel) formData.append("vehicle_model", vehicleModel);
   if (description) formData.append("user_description", description);
   if (incidentDate) formData.append("incident_date", incidentDate);
   if (location) formData.append("location", location);
@@ -209,6 +244,10 @@ export async function apiCreateClaim(
 
 export async function apiListClaims(): Promise<ClaimResponse[]> {
   return request<ClaimResponse[]>("/claims");
+}
+
+export async function apiGetVehicleOptions(): Promise<VehicleOptionsResponse> {
+  return request<VehicleOptionsResponse>("/claims/vehicle-options");
 }
 
 export async function apiGetClaim(claimId: string): Promise<ClaimResponse> {

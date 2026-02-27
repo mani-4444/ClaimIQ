@@ -7,6 +7,8 @@ from app.schemas.cost import CostBreakdown
 
 class ClaimCreateRequest(BaseModel):
     policy_number: str = Field(..., min_length=5, max_length=50)
+    vehicle_company: Optional[str] = Field(None, max_length=80)
+    vehicle_model: Optional[str] = Field(None, max_length=80)
     user_description: Optional[str] = Field(None, max_length=1000)
     incident_date: Optional[str] = None
     location: Optional[str] = Field(None, max_length=200)
@@ -18,8 +20,11 @@ class ClaimResponse(BaseModel):
     image_urls: List[str]
     user_description: Optional[str] = None
     policy_number: str
+    vehicle_company: Optional[str] = None
+    vehicle_model: Optional[str] = None
     status: str
     damage_zones: Optional[List[DamageZone]] = None
+    damage_severity_score: Optional[int] = None
     ai_explanation: Optional[str] = None
     cost_breakdown: Optional[List[CostBreakdown]] = None
     cost_total: Optional[int] = None

@@ -29,13 +29,17 @@ export type VehicleZone = "Front" | "Rear" | "Left Side" | "Right Side";
 export interface DamageZone {
   zone: VehicleZone;
   severity: "minor" | "moderate" | "severe";
+  damage_type?: string;
   confidence: number;
   bounding_box: number[];
 }
 
 export interface CostBreakdown {
   zone: string;
+  damage_type?: string;
   severity: string;
+  quantity?: number;
+  unit_repair_cost?: number;
   base_cost: number;
   labor_cost: number;
   regional_multiplier: number;
@@ -48,8 +52,11 @@ export interface Claim {
   image_urls: string[];
   user_description?: string;
   policy_number: string;
+  vehicle_company?: string;
+  vehicle_model?: string;
   status: ClaimStatus;
   damage_zones?: DamageZone[];
+  damage_severity_score?: number;
   ai_explanation?: string;
   cost_breakdown?: CostBreakdown[];
   cost_total?: number;

@@ -91,13 +91,16 @@ class ReportService:
                 import json
                 cost_breakdown = json.loads(cost_breakdown)
 
-            cost_data = [["Zone", "Severity", "Base Cost", "Labor", "Total"]]
+            cost_data = [["Damage Type", "Severity", "Qty", "Unit Cost", "Total"]]
             for c in cost_breakdown:
+                damage_type = str(c.get("damage_type") or c.get("zone") or "unknown")
+                quantity = int(c.get("quantity", 1) or 1)
+                unit_cost = int(c.get("unit_repair_cost", c.get("base_cost", 0)) or 0)
                 cost_data.append([
-                    str(c.get("zone", "N/A")),
+                    damage_type,
                     str(c.get("severity", "N/A")).capitalize(),
-                    f"₹{c.get('base_cost', 0):,}",
-                    f"₹{c.get('labor_cost', 0):,}",
+                    str(quantity),
+                    f"₹{unit_cost:,}",
                     f"₹{c.get('total', 0):,}",
                 ])
             cost_data.append(["", "", "", "TOTAL", f"₹{claim.get('cost_total', 0):,}"])
