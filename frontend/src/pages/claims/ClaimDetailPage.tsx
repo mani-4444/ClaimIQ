@@ -200,9 +200,9 @@ export function ClaimDetailPage() {
         </Card>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         {/* Main content */}
-        <div className="lg:col-span-2 space-y-6">
+        <div className="lg:col-span-3 space-y-6">
           {/* Claim Info */}
           <Card padding="md">
             <CardHeader>
@@ -458,6 +458,146 @@ export function ClaimDetailPage() {
               </p>
             </Card>
           )}
+
+          {/* Advanced Insights */}
+          {(claim.repair_replace_recommendation ||
+            claim.repair_time_estimate ||
+            claim.coverage_summary ||
+            (claim.garage_recommendations &&
+              claim.garage_recommendations.length > 0) ||
+            claim.manual_review_required) && (
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+              {/* Repair vs Replace */}
+              {claim.repair_replace_recommendation && (
+                <Card padding="md">
+                  <CardHeader>
+                    <CardTitle>Repair Decision Engine</CardTitle>
+                  </CardHeader>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-gray-500">Recommendation</span>
+                      <span className="font-semibold text-primary-300">
+                        {claim.repair_replace_recommendation.action}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-500">Repair Cost</span>
+                      <span className="text-gray-200">
+                        {formatCurrency(claim.repair_replace_recommendation.repair_cost)}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-500">Replace Cost</span>
+                      <span className="text-gray-200">
+                        {formatCurrency(claim.repair_replace_recommendation.replace_cost)}
+                      </span>
+                    </div>
+                    <p className="text-xs text-gray-500 pt-1">
+                      {claim.repair_replace_recommendation.reason}
+                    </p>
+                  </div>
+                </Card>
+              )}
+
+              {/* Repair Time */}
+              {claim.repair_time_estimate && (
+                <Card padding="md">
+                  <CardHeader>
+                    <CardTitle>Time-to-Repair</CardTitle>
+                  </CardHeader>
+                  <p className="text-2xl font-semibold text-white">
+                    {claim.repair_time_estimate.label}
+                  </p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Estimated turnaround window
+                  </p>
+                </Card>
+              )}
+
+              {/* Coverage + Deductible */}
+              {claim.coverage_summary && (
+                <Card padding="md">
+                  <CardHeader>
+                    <CardTitle>Coverage & Deductible</CardTitle>
+                  </CardHeader>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-gray-500">Total Repair</span>
+                      <span className="text-gray-200">
+                        {formatCurrency(claim.coverage_summary.gross_total)}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-500">Deductible</span>
+                      <span className="text-gray-200">
+                        {formatCurrency(claim.coverage_summary.deductible)}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-500">Insurance Pays</span>
+                      <span className="text-emerald-400 font-medium">
+                        {formatCurrency(claim.coverage_summary.insurance_pays)}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-500">Customer Pays</span>
+                      <span className="text-amber-400 font-medium">
+                        {formatCurrency(claim.coverage_summary.customer_pays)}
+                      </span>
+                    </div>
+                  </div>
+                </Card>
+              )}
+
+              {/* Manual Escalation */}
+              {claim.manual_review_required && (
+                <Card
+                  padding="md"
+                  className="border-amber-500/30 bg-amber-500/5"
+                >
+                  <CardHeader>
+                    <CardTitle>Manual Review Required</CardTitle>
+                  </CardHeader>
+                  <p className="text-sm text-amber-300">
+                    {claim.manual_review_reason || "Risk threshold exceeded"}
+                  </p>
+                </Card>
+              )}
+
+              {/* Garage Recommendations */}
+              {claim.garage_recommendations &&
+                claim.garage_recommendations.length > 0 && (
+                  <Card padding="md" className="xl:col-span-2">
+                    <CardHeader>
+                      <CardTitle>Recommended Garages</CardTitle>
+                    </CardHeader>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                      {claim.garage_recommendations.map((garage) => (
+                        <div
+                          key={garage.garage_id}
+                          className="rounded border border-white/[0.06] p-3"
+                        >
+                          <p className="text-sm font-medium text-gray-200">
+                            {garage.name}
+                          </p>
+                          <p className="text-xs text-gray-500">
+                            {garage.location}
+                          </p>
+                          <div className="mt-1 flex justify-between text-xs">
+                            <span className="text-gray-400">
+                              Rating: {garage.rating.toFixed(1)}
+                            </span>
+                            <span className="text-gray-400">
+                              ~{garage.avg_turnaround_days} days
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </Card>
+                )}
+            </div>
+          )}
         </div>
 
         {/* Sidebar */}
@@ -517,6 +657,42 @@ export function ClaimDetailPage() {
                 <CardTitle>Fraud Risk Score</CardTitle>
               </CardHeader>
               <RiskScoreGauge score={claim.fraud_score} />
+              {claim.fraud_signal_breakdown && (
+                <div className="mt-4 grid grid-cols-2 gap-2 text-xs">
+                  <div className="rounded border border-white/[0.06] p-2">
+                    <p className="text-gray-500">Reuse</p>
+                    <p className="text-gray-200 font-medium">
+                      {claim.fraud_signal_breakdown.reuse_score != null
+                        ? `${Math.round(claim.fraud_signal_breakdown.reuse_score * 100)}%`
+                        : "N/A"}
+                    </p>
+                  </div>
+                  <div className="rounded border border-white/[0.06] p-2">
+                    <p className="text-gray-500">AI-Gen</p>
+                    <p className="text-gray-200 font-medium">
+                      {claim.fraud_signal_breakdown.ai_gen_score != null
+                        ? `${Math.round(claim.fraud_signal_breakdown.ai_gen_score * 100)}%`
+                        : "N/A"}
+                    </p>
+                  </div>
+                  <div className="rounded border border-white/[0.06] p-2">
+                    <p className="text-gray-500">Metadata</p>
+                    <p className="text-gray-200 font-medium">
+                      {claim.fraud_signal_breakdown.metadata_anomaly != null
+                        ? `${Math.round(claim.fraud_signal_breakdown.metadata_anomaly * 100)}%`
+                        : "N/A"}
+                    </p>
+                  </div>
+                  <div className="rounded border border-white/[0.06] p-2">
+                    <p className="text-gray-500">Confidence</p>
+                    <p className="text-gray-200 font-medium">
+                      {claim.fraud_signal_breakdown.avg_confidence != null
+                        ? `${Math.round(claim.fraud_signal_breakdown.avg_confidence * 100)}%`
+                        : "N/A"}
+                    </p>
+                  </div>
+                </div>
+              )}
               {claim.fraud_flags && claim.fraud_flags.length > 0 && (
                 <div className="mt-4 space-y-1">
                   <p className="text-xs text-gray-500 font-medium">

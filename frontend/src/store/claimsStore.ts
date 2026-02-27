@@ -30,6 +30,13 @@ function toClaim(c: ClaimResponse): Claim {
     decision: c.decision as Claim["decision"],
     decision_confidence: c.decision_confidence,
     risk_level: c.risk_level as Claim["risk_level"],
+    repair_replace_recommendation: c.repair_replace_recommendation,
+    manual_review_required: c.manual_review_required,
+    manual_review_reason: c.manual_review_reason,
+    repair_time_estimate: c.repair_time_estimate,
+    coverage_summary: c.coverage_summary,
+    garage_recommendations: c.garage_recommendations,
+    fraud_signal_breakdown: c.fraud_signal_breakdown,
     created_at: c.created_at,
     processed_at: c.processed_at,
   };

@@ -65,6 +65,45 @@ export interface Claim {
   decision?: ClaimDecision;
   decision_confidence?: number;
   risk_level?: RiskLevel;
+  repair_replace_recommendation?: {
+    action: string;
+    severity_score: number;
+    repair_cost: number;
+    replace_cost: number;
+    reason: string;
+  };
+  manual_review_required?: boolean;
+  manual_review_reason?: string;
+  repair_time_estimate?: {
+    min_days: number;
+    max_days: number;
+    label: string;
+  };
+  coverage_summary?: {
+    gross_total: number;
+    depreciation_pct: number;
+    depreciated_total: number;
+    deductible: number;
+    coverage_limit: number;
+    insurance_pays: number;
+    customer_pays: number;
+    policy_active: boolean;
+    policy_valid_till?: string;
+  };
+  garage_recommendations?: Array<{
+    garage_id: string;
+    name: string;
+    location: string;
+    specialization: string[];
+    rating: number;
+    avg_turnaround_days: number;
+  }>;
+  fraud_signal_breakdown?: {
+    reuse_score?: number | null;
+    ai_gen_score?: number | null;
+    metadata_anomaly?: number | null;
+    avg_confidence?: number | null;
+  };
   created_at: string;
   processed_at?: string;
 }

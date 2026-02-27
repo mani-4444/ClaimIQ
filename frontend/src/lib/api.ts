@@ -209,6 +209,45 @@ export interface ClaimResponse {
   decision?: string; // pending | pre_approved | manual_review | rejected
   decision_confidence?: number;
   risk_level?: string; // low | medium | high
+  repair_replace_recommendation?: {
+    action: string;
+    severity_score: number;
+    repair_cost: number;
+    replace_cost: number;
+    reason: string;
+  };
+  manual_review_required?: boolean;
+  manual_review_reason?: string;
+  repair_time_estimate?: {
+    min_days: number;
+    max_days: number;
+    label: string;
+  };
+  coverage_summary?: {
+    gross_total: number;
+    depreciation_pct: number;
+    depreciated_total: number;
+    deductible: number;
+    coverage_limit: number;
+    insurance_pays: number;
+    customer_pays: number;
+    policy_active: boolean;
+    policy_valid_till?: string;
+  };
+  garage_recommendations?: Array<{
+    garage_id: string;
+    name: string;
+    location: string;
+    specialization: string[];
+    rating: number;
+    avg_turnaround_days: number;
+  }>;
+  fraud_signal_breakdown?: {
+    reuse_score?: number | null;
+    ai_gen_score?: number | null;
+    metadata_anomaly?: number | null;
+    avg_confidence?: number | null;
+  };
   created_at: string;
   processed_at?: string;
 }
@@ -230,6 +269,10 @@ export async function apiCreateClaim(
   description?: string,
   incidentDate?: string,
   location?: string,
+  coverageLimit?: number,
+  deductible?: number,
+  depreciationPct?: number,
+  policyValidTill?: string,
 ): Promise<ClaimResponse> {
   const formData = new FormData();
   images.forEach((img) => formData.append("images", img));
@@ -239,6 +282,12 @@ export async function apiCreateClaim(
   if (description) formData.append("user_description", description);
   if (incidentDate) formData.append("incident_date", incidentDate);
   if (location) formData.append("location", location);
+  if (coverageLimit != null)
+    formData.append("coverage_limit", String(coverageLimit));
+  if (deductible != null) formData.append("deductible", String(deductible));
+  if (depreciationPct != null)
+    formData.append("depreciation_pct", String(depreciationPct));
+  if (policyValidTill) formData.append("policy_valid_till", policyValidTill);
   return request<ClaimResponse>("/claims", { method: "POST", body: formData });
 }
 

@@ -16,6 +16,7 @@ class DecisionService:
         fraud_score: int,
         cost_total: int,
         fraud_flags: List[str],
+        avg_confidence: float | None = None,
     ) -> DecisionResult:
         """
         Decision rules:
@@ -31,6 +32,15 @@ class DecisionService:
                 decision="rejected",
                 confidence=min(0.95, fraud_score / 100),
                 risk_level="critical" if has_duplicate else "high",
+            )
+
+        # HUMAN ESCALATION (responsible AI gate)
+        if fraud_score > 60 or (avg_confidence is not None and avg_confidence < 0.5):
+            confidence = round(1.0 - (fraud_score / 100), 2)
+            return DecisionResult(
+                decision="manual_review",
+                confidence=max(0.3, confidence),
+                risk_level="high",
             )
 
         # MANUAL REVIEW (high fraud or high cost)

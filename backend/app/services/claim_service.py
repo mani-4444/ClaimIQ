@@ -6,6 +6,7 @@ from app.services.fraud_service import FraudService
 from app.services.decision_service import DecisionService
 from app.services.vision_llm_service import VisionLLMService
 from app.services.storage_service import StorageService
+from app.services.advanced_features_service import AdvancedFeaturesService
 from app.db.repositories.claim_repo import ClaimRepository
 from app.schemas.claim import ClaimProcessResponse
 from app.utils.logger import logger
@@ -30,6 +31,7 @@ class ClaimService:
         self.decision_service = decision_service
         self.vision_llm_service = vision_llm_service
         self.claim_repo = claim_repo
+        self.advanced_features_service = AdvancedFeaturesService()
 
     @staticmethod
     def _compute_damage_severity_score(damage_zones: List[dict]) -> int | None:
@@ -130,12 +132,38 @@ class ClaimService:
                 user_description=claim.get("user_description"),
             )
 
+            avg_confidence = 0.0
+            if damage_zones:
+                avg_confidence = sum(float(d.confidence) for d in damage_zones) / len(damage_zones)
+
             # 6. Decision Engine
             logger.info(f"[{claim_id[:8]}] Making decision...")
             decision_result = self.decision_service.make_decision(
                 fraud_score=fraud_result.fraud_score,
                 cost_total=cost_total,
                 fraud_flags=fraud_result.flags,
+                avg_confidence=avg_confidence,
+            )
+
+            damage_zone_dicts = [d.model_dump() for d in damage_zones]
+            repair_replace_recommendation = self.advanced_features_service.recommend_repair_action(
+                damage_zone_dicts,
+                cost_total,
+            )
+            repair_time_estimate = self.advanced_features_service.estimate_repair_time(
+                damage_zone_dicts
+            )
+            coverage_summary = self.advanced_features_service.compute_coverage_summary(
+                claim,
+                cost_total,
+            )
+            garage_recommendations = self.advanced_features_service.recommend_garages(
+                damage_zone_dicts,
+                claim.get("location"),
+            )
+            manual_review_required, manual_review_reason = self.advanced_features_service.should_escalate(
+                fraud_result.fraud_score,
+                avg_confidence,
             )
 
             # 7. Persist results
@@ -162,7 +190,6 @@ class ClaimService:
 
             # Build response
             cost_breakdown_dicts = [c.model_dump() for c in cost_breakdown]
-            damage_zone_dicts = [d.model_dump() for d in damage_zones]
             damage_severity_score = self._compute_damage_severity_score(damage_zone_dicts)
 
             return ClaimProcessResponse(
@@ -184,6 +211,18 @@ class ClaimService:
                 decision=decision_result.decision,
                 decision_confidence=decision_result.confidence,
                 risk_level=decision_result.risk_level,
+                repair_replace_recommendation=repair_replace_recommendation,
+                manual_review_required=manual_review_required,
+                manual_review_reason=manual_review_reason,
+                repair_time_estimate=repair_time_estimate,
+                coverage_summary=coverage_summary,
+                garage_recommendations=garage_recommendations,
+                fraud_signal_breakdown={
+                    "reuse_score": fraud_result.reuse_score,
+                    "ai_gen_score": fraud_result.ai_gen_score,
+                    "metadata_anomaly": fraud_result.metadata_anomaly,
+                    "avg_confidence": round(avg_confidence, 3),
+                },
                 created_at=str(claim["created_at"]),
                 processed_at=str(claim.get("processed_at", "")),
                 processing_time_ms=processing_time_ms,

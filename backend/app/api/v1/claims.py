@@ -10,6 +10,7 @@ from app.services.cost_service import CostService
 from app.services.fraud_service import FraudService
 from app.services.decision_service import DecisionService
 from app.services.vision_llm_service import VisionLLMService
+from app.services.advanced_features_service import AdvancedFeaturesService
 from app.db.repositories.claim_repo import ClaimRepository
 from app.db.repositories.cost_repo import CostRepository
 from app.db.repositories.fraud_repo import FraudRepository
@@ -81,6 +82,23 @@ def _build_claim_response(claim: dict) -> ClaimResponse:
         cost_breakdown = json.loads(cost_breakdown)
 
     damage_severity_score = _compute_damage_severity_score(damage_zones)
+    advanced = AdvancedFeaturesService()
+    repair_replace_recommendation = advanced.recommend_repair_action(
+        damage_zones or [], claim.get("cost_total") or 0
+    )
+    repair_time_estimate = advanced.estimate_repair_time(damage_zones or [])
+    coverage_summary = advanced.compute_coverage_summary(claim, claim.get("cost_total") or 0)
+    garage_recommendations = advanced.recommend_garages(damage_zones or [], claim.get("location"))
+
+    avg_confidence = 0.0
+    if damage_zones:
+        confidences = [float(z.get("confidence") or 0.0) for z in damage_zones if isinstance(z, dict)]
+        if confidences:
+            avg_confidence = sum(confidences) / len(confidences)
+    manual_review_required, manual_review_reason = advanced.should_escalate(
+        int(claim.get("fraud_score") or 0),
+        avg_confidence,
+    )
 
     return ClaimResponse(
         id=str(claim["id"]),
@@ -101,6 +119,18 @@ def _build_claim_response(claim: dict) -> ClaimResponse:
         decision=claim.get("decision"),
         decision_confidence=claim.get("decision_confidence"),
         risk_level=claim.get("risk_level"),
+        repair_replace_recommendation=repair_replace_recommendation,
+        manual_review_required=manual_review_required,
+        manual_review_reason=manual_review_reason,
+        repair_time_estimate=repair_time_estimate,
+        coverage_summary=coverage_summary,
+        garage_recommendations=garage_recommendations,
+        fraud_signal_breakdown={
+            "reuse_score": None,
+            "ai_gen_score": None,
+            "metadata_anomaly": None,
+            "avg_confidence": round(avg_confidence, 3),
+        },
         created_at=str(claim.get("created_at", "")),
         processed_at=str(claim.get("processed_at", "")) if claim.get("processed_at") else None,
     )
@@ -115,6 +145,10 @@ async def create_claim(
     user_description: Optional[str] = Form(None),
     incident_date: Optional[str] = Form(None),
     location: Optional[str] = Form(None),
+    coverage_limit: Optional[int] = Form(None),
+    deductible: Optional[int] = Form(None),
+    depreciation_pct: Optional[float] = Form(None),
+    policy_valid_till: Optional[str] = Form(None),
     current_user: dict = Depends(get_current_user),
 ):
     """Create and auto-process a claim with uploaded damage images."""
@@ -162,6 +196,10 @@ async def create_claim(
         user_description=user_description,
         incident_date=incident_date,
         location=location,
+        coverage_limit=coverage_limit,
+        deductible=deductible,
+        depreciation_pct=depreciation_pct,
+        policy_valid_till=policy_valid_till,
     )
 
     # Auto-process immediately after submission

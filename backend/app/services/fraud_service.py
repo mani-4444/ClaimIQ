@@ -1,4 +1,7 @@
 from typing import List, Optional
+import io
+import httpx
+from PIL import Image, ExifTags
 from app.ml.clip_embedder import CLIPEmbedder
 from app.db.repositories.claim_repo import ClaimRepository
 from app.db.repositories.fraud_repo import FraudRepository
@@ -45,7 +48,7 @@ class FraudService:
         metadata_anomaly = 0.0
         flags: List[str] = []
 
-        # --- Signal 1: Image Similarity (CLIP) ---
+        # --- Signal 1: Image Similarity (CLIP / hash fallback) ---
         if self.clip_embedder.is_available:
             for url in image_urls:
                 try:
@@ -76,6 +79,29 @@ class FraudService:
                     logger.warning(f"CLIP fraud check failed for {url}: {e}")
         else:
             logger.info("CLIP not available, skipping image similarity check")
+
+        # Fallback duplicate detection using perceptual hash against user's past claims
+        try:
+            hash_similarity = await self._hash_duplicate_similarity(
+                user_id=user_id,
+                current_claim_id=claim_id,
+                image_urls=image_urls,
+            )
+            if hash_similarity >= 0.9:
+                reuse_score = max(reuse_score, 0.8)
+                flags.append(
+                    f"Hash-based duplicate likelihood detected (similarity: {hash_similarity:.2f})"
+                )
+        except Exception as e:
+            logger.warning(f"Hash duplicate check failed: {e}")
+
+        # --- Signal 1b: AI-generated / manipulated image signal ---
+        try:
+            ai_gen_score = await self._estimate_ai_gen_score(image_urls)
+            if ai_gen_score > 0.7:
+                flags.append("Potential synthetic/manipulated image signal detected")
+        except Exception as e:
+            logger.warning(f"AI-gen metadata check failed: {e}")
 
         # --- Signal 2: Claim Frequency ---
         try:
@@ -116,7 +142,117 @@ class FraudService:
         logger.info(
             f"Fraud analysis for claim {claim_id}: score={score}, risk={risk}, flags={len(flags)}"
         )
-        return FraudAnalysis(fraud_score=score, flags=flags)
+        return FraudAnalysis(
+            fraud_score=score,
+            flags=flags,
+            reuse_score=round(reuse_score, 3),
+            ai_gen_score=round(ai_gen_score, 3),
+            metadata_anomaly=round(metadata_anomaly, 3),
+        )
+
+    @staticmethod
+    def _dhash(image: Image.Image, hash_size: int = 8) -> int:
+        gray = image.convert("L").resize((hash_size + 1, hash_size))
+        pixels = list(gray.getdata())
+        value = 0
+        for row in range(hash_size):
+            for col in range(hash_size):
+                left = pixels[row * (hash_size + 1) + col]
+                right = pixels[row * (hash_size + 1) + col + 1]
+                value = (value << 1) | (1 if left > right else 0)
+        return value
+
+    @staticmethod
+    def _hamming_distance(a: int, b: int) -> int:
+        return (a ^ b).bit_count()
+
+    async def _download_image(self, url: str) -> Optional[Image.Image]:
+        async with httpx.AsyncClient(timeout=20.0) as client:
+            response = await client.get(url)
+            response.raise_for_status()
+            return Image.open(io.BytesIO(response.content))
+
+    async def _hash_duplicate_similarity(
+        self,
+        user_id: str,
+        current_claim_id: str,
+        image_urls: List[str],
+    ) -> float:
+        current_hashes: List[int] = []
+        for url in image_urls:
+            try:
+                image = await self._download_image(url)
+                if image:
+                    current_hashes.append(self._dhash(image))
+            except Exception:
+                continue
+
+        if not current_hashes:
+            return 0.0
+
+        past_claims = await self.claim_repo.list_by_user(user_id)
+        best_similarity = 0.0
+
+        for claim in past_claims:
+            if str(claim.get("id")) == str(current_claim_id):
+                continue
+            for past_url in claim.get("image_urls", []):
+                try:
+                    past_image = await self._download_image(past_url)
+                    if not past_image:
+                        continue
+                    past_hash = self._dhash(past_image)
+                    for curr_hash in current_hashes:
+                        distance = self._hamming_distance(curr_hash, past_hash)
+                        similarity = 1.0 - (distance / 64.0)
+                        best_similarity = max(best_similarity, similarity)
+                except Exception:
+                    continue
+
+        return float(best_similarity)
+
+    async def _estimate_ai_gen_score(self, image_urls: List[str]) -> float:
+        suspicious_count = 0.0
+        total = 0
+
+        software_tag_names = {"Software", "ProcessingSoftware", "HostComputer"}
+
+        for url in image_urls:
+            try:
+                image = await self._download_image(url)
+                if image is None:
+                    continue
+                total += 1
+
+                exif = image.getexif() if hasattr(image, "getexif") else None
+                if not exif or len(exif) == 0:
+                    suspicious_count += 0.4
+                    continue
+
+                software_text = ""
+                for k, v in exif.items():
+                    tag_name = ExifTags.TAGS.get(k, str(k))
+                    if tag_name in software_tag_names:
+                        software_text += f" {v}".lower()
+
+                suspicious_keywords = [
+                    "photoshop",
+                    "gimp",
+                    "canva",
+                    "midjourney",
+                    "stable diffusion",
+                    "dall-e",
+                    "adobe",
+                ]
+                if any(keyword in software_text for keyword in suspicious_keywords):
+                    suspicious_count += 0.8
+            except Exception:
+                continue
+
+        if total == 0:
+            return 0.0
+
+        return min(1.0, suspicious_count / total)
 
     def _check_inconsistency(
         self, damage_zones: List[DamageZone], description: str

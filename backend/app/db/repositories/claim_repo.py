@@ -20,6 +20,10 @@ class ClaimRepository:
         user_description: Optional[str] = None,
         incident_date: Optional[str] = None,
         location: Optional[str] = None,
+        coverage_limit: Optional[int] = None,
+        deductible: Optional[int] = None,
+        depreciation_pct: Optional[float] = None,
+        policy_valid_till: Optional[str] = None,
     ) -> dict:
         data = {
             "user_id": user_id,
@@ -36,6 +40,14 @@ class ClaimRepository:
             data["vehicle_company"] = vehicle_company
         if vehicle_model:
             data["vehicle_model"] = vehicle_model
+        if coverage_limit is not None:
+            data["coverage_limit"] = coverage_limit
+        if deductible is not None:
+            data["deductible"] = deductible
+        if depreciation_pct is not None:
+            data["depreciation_pct"] = depreciation_pct
+        if policy_valid_till:
+            data["policy_valid_till"] = policy_valid_till
 
         try:
             response = self.client.table(self.table).insert(data).execute()
@@ -54,12 +66,26 @@ class ClaimRepository:
                 )
             )
 
-            if ("vehicle_company" in data or "vehicle_model" in data) and missing_vehicle_column:
+            if (
+                (
+                    "vehicle_company" in data
+                    or "vehicle_model" in data
+                    or "coverage_limit" in data
+                    or "deductible" in data
+                    or "depreciation_pct" in data
+                    or "policy_valid_till" in data
+                )
+                and missing_vehicle_column
+            ):
                 logger.warning(
-                    "claims table does not yet include vehicle_company/vehicle_model; retrying create without those fields"
+                    "claims table missing optional extended columns; retrying create without optional fields"
                 )
                 data.pop("vehicle_company", None)
                 data.pop("vehicle_model", None)
+                data.pop("coverage_limit", None)
+                data.pop("deductible", None)
+                data.pop("depreciation_pct", None)
+                data.pop("policy_valid_till", None)
                 response = self.client.table(self.table).insert(data).execute()
             else:
                 raise

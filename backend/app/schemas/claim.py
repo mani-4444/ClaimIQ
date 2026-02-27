@@ -12,6 +12,10 @@ class ClaimCreateRequest(BaseModel):
     user_description: Optional[str] = Field(None, max_length=1000)
     incident_date: Optional[str] = None
     location: Optional[str] = Field(None, max_length=200)
+    coverage_limit: Optional[int] = None
+    deductible: Optional[int] = None
+    depreciation_pct: Optional[float] = None
+    policy_valid_till: Optional[str] = None
 
 
 class ClaimResponse(BaseModel):
@@ -33,6 +37,13 @@ class ClaimResponse(BaseModel):
     decision: Optional[str] = None
     decision_confidence: Optional[float] = None
     risk_level: Optional[str] = None
+    repair_replace_recommendation: Optional[dict] = None
+    manual_review_required: Optional[bool] = None
+    manual_review_reason: Optional[str] = None
+    repair_time_estimate: Optional[dict] = None
+    coverage_summary: Optional[dict] = None
+    garage_recommendations: Optional[List[dict]] = None
+    fraud_signal_breakdown: Optional[dict] = None
     created_at: str
     processed_at: Optional[str] = None
 
