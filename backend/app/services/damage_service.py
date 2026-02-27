@@ -19,7 +19,7 @@ class DamageService:
         self, image_urls: List[str]
     ) -> tuple[List[DamageZone], dict[str, bytes]]:
         """Run YOLO detection and return zone results + annotated image bytes per source URL."""
-        all_damages: List[DamageZone] = []
+        zone_metrics: dict[str, dict[str, List[float]]] = {}
         overlay_images: dict[str, bytes] = {}
 
         for url in image_urls:
@@ -30,31 +30,59 @@ class DamageService:
                     overlay_images[url] = annotated_bytes
 
                 for det in detections:
-                    severity = self._classify_severity(
-                        det["confidence"], det.get("area_ratio", 0)
-                    )
-                    damage_zone = DamageZone(
-                        zone=det["zone"],
-                        severity=severity,
-                        confidence=round(det["confidence"], 3),
-                        bounding_box=det["bbox"],
-                    )
-                    all_damages.append(damage_zone)
+                    zone = det["zone"]
+                    zone_metrics.setdefault(zone, {"conf": [], "area": [], "bbox": []})
+                    zone_metrics[zone]["conf"].append(float(det["confidence"]))
+                    zone_metrics[zone]["area"].append(float(det.get("area_ratio", 0)))
+                    zone_metrics[zone]["bbox"].append(det["bbox"])
             except Exception as e:
                 logger.error(f"Damage detection failed for {url}: {e}")
 
-        # Deduplicate: keep highest confidence detection per zone
-        unique = self._deduplicate(all_damages)
-        logger.info(f"Detected {len(unique)} damaged zones from {len(image_urls)} images")
-        return unique, overlay_images
+        aggregated = self._aggregate_zone_metrics(zone_metrics)
+        logger.info(f"Detected {len(aggregated)} damaged zones from {len(image_urls)} images")
+        return aggregated, overlay_images
 
     def _classify_severity(self, confidence: float, area_ratio: float) -> str:
         """Classify severity based on detection confidence and damage area."""
-        if area_ratio > 0.3 or confidence > 0.9:
+        if area_ratio >= 0.22 or (confidence >= 0.85 and area_ratio >= 0.08):
             return "severe"
-        elif area_ratio > 0.15 or confidence > 0.7:
+        elif area_ratio >= 0.1 or confidence >= 0.65:
             return "moderate"
         return "minor"
+
+    def _aggregate_zone_metrics(
+        self, zone_metrics: dict[str, dict[str, List[float]]]
+    ) -> List[DamageZone]:
+        """Aggregate multiple detections per zone into a stable confidence/severity."""
+        aggregated: List[DamageZone] = []
+
+        for zone, metrics in zone_metrics.items():
+            conf_list = metrics.get("conf", [])
+            area_list = metrics.get("area", [])
+            bbox_list = metrics.get("bbox", [])
+
+            if not conf_list:
+                continue
+
+            mean_conf = sum(conf_list) / len(conf_list)
+            max_conf = max(conf_list)
+            zone_conf = (0.7 * max_conf) + (0.3 * mean_conf)
+            zone_area = min(sum(area_list), 1.0) if area_list else 0.0
+            severity = self._classify_severity(zone_conf, zone_area)
+
+            best_bbox_idx = conf_list.index(max_conf)
+            best_bbox = bbox_list[best_bbox_idx] if bbox_list else [0.0, 0.0, 0.0, 0.0]
+
+            aggregated.append(
+                DamageZone(
+                    zone=zone,
+                    severity=severity,
+                    confidence=round(zone_conf, 3),
+                    bounding_box=best_bbox,
+                )
+            )
+
+        return sorted(aggregated, key=lambda d: d.confidence, reverse=True)
 
     def _deduplicate(self, damages: List[DamageZone]) -> List[DamageZone]:
         """Keep highest confidence detection per zone."""

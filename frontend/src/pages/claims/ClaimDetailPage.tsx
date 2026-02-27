@@ -32,8 +32,6 @@ export function ClaimDetailPage() {
     loading,
     error,
     fetchClaim,
-    processClaim,
-    processing,
   } = useClaimsStore();
   const [activeTab, setActiveTab] = useState<"photos" | "damage" | "costs">(
     "photos",
@@ -42,6 +40,16 @@ export function ClaimDetailPage() {
   useEffect(() => {
     if (id) fetchClaim(id);
   }, [id, fetchClaim]);
+
+  useEffect(() => {
+    if (!id || !claim || claim.status !== "processing") return;
+
+    const interval = setInterval(() => {
+      fetchClaim(id);
+    }, 2500);
+
+    return () => clearInterval(interval);
+  }, [id, claim?.status, fetchClaim]);
 
   if (loading) {
     return (
@@ -81,16 +89,6 @@ export function ClaimDetailPage() {
   const decisionInfo = claim.decision
     ? DECISION_MAP[claim.decision as ClaimDecision]
     : null;
-
-  const handleProcess = async () => {
-    if (id) {
-      try {
-        await processClaim(id);
-      } catch {
-        // error is set in store
-      }
-    }
-  };
 
   const handleDownloadReport = async () => {
     if (!id) return;
@@ -156,15 +154,6 @@ export function ClaimDetailPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          {claim.status === "uploaded" && (
-            <Button
-              onClick={handleProcess}
-              loading={processing}
-              icon={<Zap className="h-4 w-4" />}
-            >
-              Run AI Analysis
-            </Button>
-          )}
           {claim.status === "processed" && (
             <Button
               variant="outline"
@@ -178,7 +167,7 @@ export function ClaimDetailPage() {
       </div>
 
       {/* Processing indicator */}
-      {(claim.status === "processing" || processing) && (
+      {claim.status === "processing" && (
         <Card padding="md" className="border-primary-500/30 bg-primary-500/5">
           <div className="flex items-center gap-3">
             <Loader2 className="h-5 w-5 text-primary-400 animate-spin" />
