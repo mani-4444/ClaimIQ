@@ -21,6 +21,43 @@ from app.utils.logger import logger
 router = APIRouter(prefix="/claims", tags=["Claims"])
 
 
+def _build_claim_service(claim_repo: ClaimRepository) -> ClaimService:
+    """Build claim service dependencies from app state."""
+    from app.main import ml_models
+
+    if "yolo" not in ml_models:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="YOLO model is not loaded. Check YOLO_MODEL_PATH / YOLO_WEIGHTS_DIR configuration.",
+        )
+
+    clip_embedder = ml_models.get("clip")
+    if clip_embedder is None:
+        from app.ml.clip_embedder import CLIPEmbedder
+
+        clip_embedder = CLIPEmbedder()  # creates instance with _available=False
+        logger.warning("CLIP not loaded — fraud image similarity will be skipped.")
+
+    damage_service = DamageService(detector=ml_models["yolo"])
+    cost_service = CostService(cost_repo=CostRepository())
+    fraud_service = FraudService(
+        clip_embedder=clip_embedder,
+        claim_repo=claim_repo,
+        fraud_repo=FraudRepository(),
+    )
+    decision_service = DecisionService()
+    vision_llm_service = VisionLLMService()
+
+    return ClaimService(
+        damage_service=damage_service,
+        cost_service=cost_service,
+        fraud_service=fraud_service,
+        decision_service=decision_service,
+        vision_llm_service=vision_llm_service,
+        claim_repo=claim_repo,
+    )
+
+
 def _build_claim_response(claim: dict) -> ClaimResponse:
     """Convert DB row to API response."""
     import json
@@ -63,7 +100,7 @@ async def create_claim(
     location: Optional[str] = Form(None),
     current_user: dict = Depends(get_current_user),
 ):
-    """Create a new claim with uploaded damage images."""
+    """Create and auto-process a claim with uploaded damage images."""
     # Validate image count
     if len(images) > MAX_IMAGES_PER_CLAIM:
         raise HTTPException(
@@ -108,7 +145,21 @@ async def create_claim(
         location=location,
     )
 
-    return _build_claim_response(claim)
+    # Auto-process immediately after submission
+    claim_service = _build_claim_service(claim_repo)
+
+    try:
+        processed = await claim_service.process_claim(claim["id"], current_user["id"])
+        return processed
+    except Exception as e:
+        logger.error(f"Auto-processing failed for claim {claim['id']}: {e}")
+        latest = await claim_repo.get_by_id(claim["id"], current_user["id"])
+        if latest:
+            return _build_claim_response(latest)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Claim created but processing failed: {str(e)}",
+        )
 
 
 @router.get("", response_model=List[ClaimResponse])
@@ -151,40 +202,7 @@ async def process_claim(
             detail="Claim is already being processed.",
         )
 
-    # Build service dependencies from app state (ML models loaded at startup)
-    from app.main import ml_models
-
-    if "yolo" not in ml_models:
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="YOLO model is not loaded. Check YOLO_MODEL_PATH / YOLO_WEIGHTS_DIR configuration.",
-        )
-
-    # CLIP is optional — fraud image-similarity is skipped if unavailable
-    clip_embedder = ml_models.get("clip")
-    if clip_embedder is None:
-        from app.ml.clip_embedder import CLIPEmbedder
-        clip_embedder = CLIPEmbedder()  # creates instance with _available=False
-        logger.warning("CLIP not loaded — fraud image similarity will be skipped.")
-
-    damage_service = DamageService(detector=ml_models["yolo"])
-    cost_service = CostService(cost_repo=CostRepository())
-    fraud_service = FraudService(
-        clip_embedder=clip_embedder,
-        claim_repo=claim_repo,
-        fraud_repo=FraudRepository(),
-    )
-    decision_service = DecisionService()
-    vision_llm_service = VisionLLMService()
-
-    claim_service = ClaimService(
-        damage_service=damage_service,
-        cost_service=cost_service,
-        fraud_service=fraud_service,
-        decision_service=decision_service,
-        vision_llm_service=vision_llm_service,
-        claim_repo=claim_repo,
-    )
+    claim_service = _build_claim_service(claim_repo)
 
     try:
         result = await claim_service.process_claim(claim_id, current_user["id"])
