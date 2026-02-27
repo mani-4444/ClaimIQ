@@ -2,6 +2,7 @@ from typing import Any, List
 from app.ml.yolo_detector import YOLODetector
 from app.schemas.damage import DamageZone
 from app.utils.logger import logger
+from app.utils.scoring import compute_severity_entry_score, severity_band
 
 
 class DamageService:
@@ -58,13 +59,14 @@ class DamageService:
         logger.info(f"Detected {len(aggregated)} damaged zones from {len(image_urls)} images")
         return aggregated, overlay_images
 
-    def _classify_severity(self, confidence: float, area_ratio: float) -> str:
-        """Classify severity based on detection confidence and damage area."""
-        if area_ratio >= 0.22 or (confidence >= 0.85 and area_ratio >= 0.08):
-            return "severe"
-        elif area_ratio >= 0.1 or confidence >= 0.65:
-            return "moderate"
-        return "minor"
+    def _classify_severity(self, confidence: float, area_ratio: float, quantity: int) -> str:
+        """Classify severity using exact weighted scoring thresholds."""
+        score = compute_severity_entry_score(
+            area_ratio=area_ratio,
+            confidence=confidence,
+            quantity=quantity,
+        )
+        return severity_band(score)
 
     def _aggregate_zone_metrics(
         self, zone_metrics: dict[str, dict[str, List[Any]]]
@@ -106,7 +108,8 @@ class DamageService:
                 max_conf = max(type_conf)
                 zone_conf = (0.7 * max_conf) + (0.3 * mean_conf)
                 zone_area = min(sum(type_area), 1.0) if type_area else 0.0
-                severity = self._classify_severity(zone_conf, zone_area)
+                quantity = len(indices)
+                severity = self._classify_severity(zone_conf, zone_area, quantity)
 
                 best_local_idx = type_conf.index(max_conf)
                 best_global_idx = indices[best_local_idx]
@@ -132,9 +135,10 @@ class DamageService:
                         severity=severity,
                         damage_type=damage_type,
                         confidence=round(zone_conf, 3),
+                        area_ratio=round(zone_area, 4),
                         bounding_box=best_bbox,
                         yolo_classes=unique_classes,
-                        detections_count=len(indices),
+                        detections_count=quantity,
                     )
                 )
 

@@ -118,6 +118,11 @@ export function NewClaimPage() {
   };
 
   const onSubmit = async (data: ClaimFormData) => {
+    if (currentStep < steps.length - 1) {
+      await handleNext();
+      return;
+    }
+
     if (files.length === 0) {
       setSubmitError("Please upload at least one damage photo");
       return;
@@ -163,7 +168,17 @@ export function NewClaimPage() {
       <Stepper steps={steps} currentStep={currentStep} className="mb-8" />
 
       <Card padding="lg" className="max-w-2xl">
-        <form onSubmit={handleSubmit(onSubmit)}>
+        <form
+          onSubmit={handleSubmit(onSubmit)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && currentStep < steps.length - 1) {
+              const target = e.target as HTMLElement | null;
+              if (target?.tagName !== "TEXTAREA") {
+                e.preventDefault();
+              }
+            }
+          }}
+        >
           {/* Step 1: Vehicle & Policy Info */}
           {currentStep === 0 && (
             <div className="space-y-4">

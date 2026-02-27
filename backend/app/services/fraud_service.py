@@ -10,6 +10,7 @@ from app.utils.constants import (
     FRAUD_FREQUENCY_MONTHS,
 )
 from app.utils.logger import logger
+from app.utils.scoring import compute_fraud_score, fraud_risk_band
 
 
 class FraudService:
@@ -39,7 +40,9 @@ class FraudService:
         2. Claim frequency analysis
         3. Damage-description inconsistency
         """
-        score = 0
+        reuse_score = 0.0
+        ai_gen_score = 0.0
+        metadata_anomaly = 0.0
         flags: List[str] = []
 
         # --- Signal 1: Image Similarity (CLIP) ---
@@ -55,7 +58,7 @@ class FraudService:
                     )
 
                     if match:
-                        score += 50
+                        reuse_score = max(reuse_score, float(match["similarity"]))
                         flags.append(
                             f"Duplicate image detected "
                             f"(similarity: {match['similarity']:.2f}, "
@@ -81,10 +84,9 @@ class FraudService:
             )
 
             if recent_count > FRAUD_FREQUENCY_LIMIT:
-                frequency_penalty = min(
-                    25, (recent_count - FRAUD_FREQUENCY_LIMIT) * 10
-                )
-                score += frequency_penalty
+                overflow = recent_count - FRAUD_FREQUENCY_LIMIT
+                frequency_anomaly = min(overflow / 3.0, 1.0)
+                metadata_anomaly = max(metadata_anomaly, frequency_anomaly)
                 flags.append(
                     f"High claim frequency: {recent_count} claims "
                     f"in {FRAUD_FREQUENCY_MONTHS} months"
@@ -96,13 +98,24 @@ class FraudService:
         if user_description and damage_zones:
             inconsistency = self._check_inconsistency(damage_zones, user_description)
             if inconsistency:
-                score += 20
+                metadata_anomaly = max(metadata_anomaly, 1.0)
                 flags.append(inconsistency)
 
-        # Cap at 100
-        score = min(100, score)
+        score = compute_fraud_score(
+            reuse_score=reuse_score,
+            ai_gen_score=ai_gen_score,
+            metadata_anomaly=metadata_anomaly,
+        )
+        risk = fraud_risk_band(score)
+        flags.append(
+            "Fraud components — "
+            f"reuse={reuse_score:.2f}, ai_gen={ai_gen_score:.2f}, metadata={metadata_anomaly:.2f}, "
+            f"risk={risk}"
+        )
 
-        logger.info(f"Fraud analysis for claim {claim_id}: score={score}, flags={len(flags)}")
+        logger.info(
+            f"Fraud analysis for claim {claim_id}: score={score}, risk={risk}, flags={len(flags)}"
+        )
         return FraudAnalysis(fraud_score=score, flags=flags)
 
     def _check_inconsistency(
