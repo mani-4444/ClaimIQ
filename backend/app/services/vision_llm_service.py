@@ -11,7 +11,7 @@ class VisionLLMService:
 
     SYSTEM_PROMPT = (
         "You are an expert automotive damage assessor for an insurance company. "
-        "Given a vehicle damage image and detected damage data, provide a concise "
+        "Given a vehicle damage image and detected damage categories, provide a concise "
         "professional assessment. Include: damage description, likely cause, "
         "repair recommendation. Keep response under 150 words. Be factual and precise."
     )
@@ -28,13 +28,11 @@ class VisionLLMService:
         user_description: Optional[str] = None,
     ) -> str:
         """Generate AI explanation of detected damage."""
-        zones_summary = ", ".join(
-            f"{d.zone} ({d.severity}, {d.confidence:.0%})" for d in damage_zones
-        )
+        damage_summary = self._build_damage_summary(damage_zones)
 
         user_prompt = (
             f"Analyze this vehicle damage image.\n\n"
-            f"Detected damage zones: {zones_summary}\n"
+            f"Detected damage categories: {damage_summary}\n"
             f"{'User description: ' + user_description if user_description else ''}\n\n"
             f"Provide a professional damage assessment."
         )
@@ -110,10 +108,7 @@ class VisionLLMService:
         if not damage_zones:
             return "No significant damage detected. Manual inspection recommended."
 
-        zones_text = ", ".join(
-            f"{d.zone} ({d.severity} damage, {d.confidence:.0%} confidence)"
-            for d in damage_zones
-        )
+        damage_summary = self._build_damage_summary(damage_zones)
 
         severity_max = max(
             (d.severity for d in damage_zones),
@@ -127,6 +122,46 @@ class VisionLLMService:
         )
 
         return (
-            f"Vehicle damage assessment: Detected damage in {zones_text}. "
+            f"Vehicle damage assessment: Detected categories: {damage_summary}. "
             f"Overall severity is classified as {severity_max}. {repair_note}"
         )
+
+    def _build_damage_summary(self, damages: List[DamageZone]) -> str:
+        if not damages:
+            return "none"
+
+        grouped: dict[str, dict[str, float | int]] = {}
+        severity_rank = {"minor": 1, "moderate": 2, "severe": 3}
+
+        for damage in damages:
+            damage_type = (getattr(damage, "damage_type", None) or "unknown").strip().lower()
+            if not damage_type:
+                damage_type = "unknown"
+
+            quantity = max(1, int(getattr(damage, "detections_count", 1) or 1))
+            confidence = float(getattr(damage, "confidence", 0.0) or 0.0)
+            severity = str(getattr(damage, "severity", "moderate") or "moderate").lower()
+
+            current = grouped.get(damage_type)
+            if current is None:
+                grouped[damage_type] = {
+                    "quantity": quantity,
+                    "max_conf": confidence,
+                    "severity": severity,
+                }
+                continue
+
+            current["quantity"] = int(current["quantity"]) + quantity
+            current["max_conf"] = max(float(current["max_conf"]), confidence)
+            if severity_rank.get(severity, 2) > severity_rank.get(str(current["severity"]), 2):
+                current["severity"] = severity
+
+        parts = []
+        for damage_type in sorted(grouped.keys()):
+            info = grouped[damage_type]
+            parts.append(
+                f"{damage_type} x{int(info['quantity'])} "
+                f"({str(info['severity'])}, {float(info['max_conf']):.0%})"
+            )
+
+        return ", ".join(parts)
