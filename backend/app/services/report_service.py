@@ -63,26 +63,6 @@ class ReportService:
         elements.append(self._make_table(claim_info))
         elements.append(Spacer(1, 6 * mm))
 
-        # Damage Summary
-        elements.append(Paragraph("Damage Assessment", heading_style))
-        damage_json = claim.get("damage_json")
-        if damage_json:
-            if isinstance(damage_json, str):
-                import json
-                damage_json = json.loads(damage_json)
-
-            damage_data = [["Zone", "Severity", "Confidence"]]
-            for d in damage_json:
-                damage_data.append([
-                    str(d.get("zone", "N/A")),
-                    str(d.get("severity", "N/A")).capitalize(),
-                    f"{float(d.get('confidence', 0)):.0%}",
-                ])
-            elements.append(self._make_table(damage_data, header=True))
-        else:
-            elements.append(Paragraph("No damage data available.", styles["Normal"]))
-        elements.append(Spacer(1, 6 * mm))
-
         # Cost Breakdown
         elements.append(Paragraph("Cost Breakdown", heading_style))
         cost_breakdown = claim.get("cost_breakdown")
@@ -130,12 +110,6 @@ class ReportService:
         ]
         elements.append(self._make_table(decision_info))
         elements.append(Spacer(1, 6 * mm))
-
-        # AI Explanation
-        ai_explanation = claim.get("ai_explanation")
-        if ai_explanation:
-            elements.append(Paragraph("AI Explanation", heading_style))
-            elements.append(Paragraph(ai_explanation, styles["Normal"]))
 
         # Build PDF
         doc.build(elements)
